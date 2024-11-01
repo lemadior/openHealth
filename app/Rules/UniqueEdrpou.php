@@ -12,8 +12,9 @@ class UniqueEdrpou implements ValidationRule
 
     public function __construct(?int $legalEntityId = null)
     {
+        $auth = auth();
         // Set legal entity id for current user
-        $this->legalEntityId = auth()->check() ? auth()->user()->legalEntity->id : null;
+        $this->legalEntityId = $auth->check() ? $auth->user()->legalEntity->id : null;
     }
 
     /**
