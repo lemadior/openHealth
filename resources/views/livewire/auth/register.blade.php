@@ -14,7 +14,6 @@
 
         <!-- ====== Forms Section Start -->
         <form
-            autocomplete="off"
             wire:submit.prevent="register"
         >
             <div class="form-group group mt-6">

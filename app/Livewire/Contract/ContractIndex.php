@@ -38,12 +38,12 @@ class ContractIndex extends Component
     public ?Contract $contract;
     public function getLegalEntity(): void
     {
-        $this->legalEntity = auth()->user()->legalEntity;
+        $this->legalEntity = legalEntity();
     }
 
     public function boot(): void
     {
-        $this->contractCacheKey = self::CACHE_PREFIX . '-'. Auth::user()->legalEntity->uuid;
+        $this->contractCacheKey = self::CACHE_PREFIX . '-'. legalEntity()->uuid;
     }
 
 

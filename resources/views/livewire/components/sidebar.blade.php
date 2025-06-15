@@ -30,7 +30,7 @@
             @hasanyrole('OWNER|ADMIN|DOCTOR')
 
                 <li>
-                    <a href="{{route('edit.legalEntities')}}"
+                    <a href="{{route('edit.legalEntities', ['legal_entity_id' => legalEntity()->id])}}"
                        class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
                     >
                         <svg class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
@@ -51,7 +51,7 @@
                 </li>
 
                 <li>
-                    <a href="{{route('division.index')}}"
+                    <a href="{{route('division.index', ['legal_entity_id' => legalEntity()->id])}}"
                        class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
                     >
                         <svg class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
@@ -72,7 +72,7 @@
                 </li>
 
                 <li>
-                    <a href="{{route('employee.index')}}"
+                    <a href="{{route('employee.index', ['legal_entity_id' => legalEntity()->id])}}"
                        class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
                     >
                         <svg class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
@@ -93,7 +93,7 @@
                 </li>
 
                 <li>
-                    <a href="{{route('contract.index')}}"
+                    <a href="{{route('contract.index', ['legal_entity_id' => legalEntity()->id])}}"
                        class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
                     >
                         <svg class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
@@ -113,7 +113,7 @@
                 </li>
 
                 <li>
-                    <a href="{{route('license.index')}}"
+                    <a href="{{route('license.index', ['legal_entity_id' => legalEntity()->id])}}"
                        class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
                     >
                         <svg class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
@@ -133,7 +133,7 @@
                 </li>
 
                 <li>
-                    <a href="{{route('declaration.index')}}"
+                    <a href="{{route('declaration.index', ['legal_entity_id' => legalEntity()->id])}}"
                        class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
                     >
                         <svg class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
@@ -159,7 +159,7 @@
             @hasanyrole('OWNER|ADMIN|DOCTOR')
 
                 <li>
-                    <a href="{{route('patient.index')}}"
+                    <a href="{{route('patient.index', ['legal_entity_id' => legalEntity()->id])}}"
                        class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
                    >
                         <svg class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"

@@ -11,7 +11,7 @@
         </h2>
 
         <form
-            x-data="{ isLocalAuth: $wire.entangle('isLocalAuth')  }"
+           x-data="{ isLocalAuth: $wire.entangle('isLocalAuth') }"
             wire:submit.prevent="login"
         >
             <div class="form-group group">
@@ -21,7 +21,8 @@
                     placeholder=" "
                     id="email"
                     autocomplete="off"
-                    wire:model="email"
+                    name="email"
+                    wire:model.defer="email"
                     aria-describedby="{{ $hasEmailError ? 'hasEmailErrorHelp' : '' }}"
                     class="input {{ $hasEmailError  ? 'input-error border-red-500 focus:border-red-500' : ''}} peer"
                 />
@@ -37,7 +38,26 @@
                 </label>
             </div>
 
-            <div class="mt-6" x-show="isLocalAuth" x-cloak>
+            {{-- Legal Entity Select --}}
+            <x-forms.combobox
+                x-show="!isLocalAuth"
+                x-cloak
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                :options="$legalEntitesList"
+                is-required="!isLocalAuth"
+                bind="legalEntityUUID"
+                bindValue='uuid'
+                bindParam='name'
+                class="!z-[100] mt-6"
+            />
+
+            <div class="mt-6" x-show="isLocalAuth" x-cloak
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+            >
                 <div class="form-group group">
                     <input
                         :required="isLocalAuth"

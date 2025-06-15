@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-guest-layout>
     @section('content')
     <div class="flex flex-col justify-center items-center px-6 mx-auto h-screen xl:px-0 dark:bg-gray-900">
         <div class="block md:max-w-lg">
@@ -21,4 +21,4 @@
         </div>
     </div>
     @endsection
-</x-app-layout>
+</x-guest-layout>

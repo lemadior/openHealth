@@ -8,7 +8,7 @@
             <div class="rounded-sm border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
                 <div class="flex justify-end border-stroke px-7 py-4 dark:border-strokedark">
                     <a
-                        href="{{ route('division.form') }}"
+                        href="{{ route('division.form', ['legal_entity_id' => legalEntity()->id]) }}"
                         type="button"
                         class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
                     >
@@ -121,7 +121,7 @@
                                                     >
                                                         @if ($division->status == 'ACTIVE')
                                                             <a
-                                                                href="{{ route('division.form', $division) }}"
+                                                                href="{{ route('division.form', ['legal_entity_id' => legalEntity()->id, 'division' => $division]) }}"
                                                                 class="flex items-center gap-2 w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:text-gray-500"
                                                             >
                                                                 {{ __('forms.edit') }}
@@ -134,7 +134,7 @@
                                                                 {{ __('forms.deactivate') }}
                                                             </a>
                                                             <a
-                                                            href="{{ route('healthcare_service.index', $division) }}"
+                                                            href="{{ route('healthcare_service.index', ['legal_entity_id' => legalEntity()->id, 'division' => $division]) }}"
                                                             class="flex items-center gap-2 w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:text-gray-500"
                                                             >
                                                                 {{ __('forms.services') }}

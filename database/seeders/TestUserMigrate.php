@@ -196,7 +196,6 @@ class TestUserMigrate extends Seeder
                     'email_verified_at' => new Carbon('2024-09-11T11:00:52.000000Z'),
                     'current_team_id' => null,
                     'profile_photo_path' => null,
-                    'tax_id' => null,
                     'settings' => null,
                     'priv_settings' => null,
                     'is_blocked' => null,
@@ -204,8 +203,7 @@ class TestUserMigrate extends Seeder
                     'person_id' => null,
                     'created_at' => new Carbon('2024-09-11T10:00:52.000000Z'),
                     'updated_at' => new Carbon('2024-09-11T10:03:10.000000Z'),
-                    'two_factor_confirmed_at' => null,
-                    'legal_entity_id' => $legalEntityId,
+                    'two_factor_confirmed_at' => null
                 ]);
 
                 $this->command->info("\tINFO: A new User entry has been successfully inserted into the database");

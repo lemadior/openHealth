@@ -15,7 +15,7 @@ class EHealthUserProvider extends EloquentUserProvider
      * @param  mixed  $identifier
      * @return \Illuminate\Contracts\Auth\Authenticatable|null
      */
-    public function retrieveByid($identifier):?User
+    public function retrieveById($identifier):?User
     {
         return User::where('uuid', $identifier)->first();
     }

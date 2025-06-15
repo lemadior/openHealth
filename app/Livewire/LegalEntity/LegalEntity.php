@@ -194,7 +194,7 @@ class LegalEntity extends Component
      */
     private function getLegalEntityFromAuth(): ?LegalEntityModel
     {
-        return auth()->user()->legalEntity ?? null;
+        return legalEntity() ?? null;
     }
 
     /**

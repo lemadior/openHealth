@@ -24,7 +24,7 @@
                 <div class="justify-end block sm:flex md:divide-x md:divide-gray-100 dark:divide-gray-700 mb-8">
                     <div class="button-group">
                         <button type="button" class="button-primary">
-                            <a href="{{ route('patient.form') }}">
+                            <a href="{{ route('patient.form', ['legal_entity_id' => legalEntity()->id]) }}">
                                 {{ __('patients.add_patient') }}
                             </a>
                         </button>
@@ -114,7 +114,7 @@
                                         ></div>
                                         <template x-if="patient.status === 'APPLICATION'">
                                             <div class="flex gap-2 mt-2">
-                                                <a :href="`{{ route('patient.form', ['id' => '']) }}/${patient.id}`"
+                                                <a :href="`{{ route('patient.form', ['legal_entity_id' => legalEntity()->id, 'id' => '']) }}/${patient.id}`"
                                                    class="button-primary"
                                                 >
                                                     {{ __('patients.continue_registration') }}

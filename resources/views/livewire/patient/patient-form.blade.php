@@ -25,7 +25,7 @@
                 @include('livewire.patient.parts.authentication-methods')
 
                 <div class="flex xl:flex-row gap-6 justify-between items-center">
-                    <a href="{{ route('patient.index') }}" class="button-minor">
+                    <a href="{{ route('patient.index', ['legal_entity_id' => legalEntity()->id]) }}" class="button-minor">
                         {{ __('forms.back') }}
                     </a>
                     @if($user->hasRole('DOCTOR'))

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Classes\eHealth\Request;
 use Illuminate\Support\Facades\Redirect;
 use App\Classes\eHealth\Exceptions\ApiException;
+use App\Models\LegalEntity;
 
 class EmployeeApi
 {
@@ -60,25 +61,28 @@ class EmployeeApi
      * Authenticate user with eHealth
      *
      * @param string $code
+     * @param string $legalEntityUUID
      *
      * @return mixed
      */
-    public static function authenticate(string $code): mixed
+    public static function authenticate(string $code, string $legalEntityUUID): mixed
     {
-        $user = User::find(\session()->get(config('ehealth.api.auth_ehealth')));
+        $user = User::find(session()->get(config('ehealth.api.auth_ehealth')));
 
         if (!$user) {
             return Redirect::route('login')->with('error', __('auth.login.error.user_identity'));
         }
 
+        $legalEntity=LegalEntity::byUuid($legalEntityUUID)->first();
+
         $data = [
             'token' => [
-                'client_id'     => $user->legalEntity->client_id ?? '',
-                'client_secret' => $user->legalEntity->client_secret ?? '',
+                'client_id'     => $legalEntity->client_id ?? '',
+                'client_secret' => $legalEntity->client_secret ?? '',
                 'grant_type'    => 'authorization_code',
                 'code'          => $code,
                 'redirect_uri'  => config('ehealth.api.redirect_uri'),
-                'scope'         => $user->getScopes()
+                'scope'         => $user->getScopes($legalEntity->clientId)
             ]
         ];
 

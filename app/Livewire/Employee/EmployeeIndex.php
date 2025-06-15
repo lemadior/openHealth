@@ -50,9 +50,9 @@ class EmployeeIndex extends Component
 
     public function boot(EmployeeRepository $employeeRepository): void
     {
-        $this->employeeCacheKey = self::CACHE_PREFIX.'-'.Auth::user()->legalEntity->uuid;
+        $this->employeeCacheKey = self::CACHE_PREFIX.'-'.legalEntity()->uuid;
         $this->employeeRepository = $employeeRepository;
-        $this->legalEntity = Auth::user()->legalEntity;
+        $this->legalEntity = legalEntity();
     }
 
     public function mount()

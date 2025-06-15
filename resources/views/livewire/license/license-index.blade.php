@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 py-6">
         <div class="table-nav">
             <h1 class="text-xl font-bold text-gray-900 dark:text-white mt-6">{{ __('Ліцензії') }}</h1>
-            <a href="{{ route('license.create') }}" class="default-button">
+            <a href="{{ route('license.create', ['legal_entity_id' => legalEntity()->id]) }}" class="default-button">
                 + Нова ліцензія
             </a>
         </div>

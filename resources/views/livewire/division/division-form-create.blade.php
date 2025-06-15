@@ -392,7 +392,7 @@
                     <div class='mb-4.5 mt-6 flex flex-col gap-6 xl:flex-row justify-between items-center'>
                         <x-secondary-button>
                             <div class='xl:w-1/4 text-left'>
-                                <a href="{{ route('division.index') }}">
+                                <a href="{{ route('division.index', ['legal_entity_id' => legalEntity()->id]) }}">
                                     {{ __('forms.back') }}
                                 </a>
                             </div>

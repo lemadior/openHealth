@@ -84,13 +84,19 @@ class DivisionIndex extends Component
         DB::transaction(function () use ($responses) {
             foreach ($responses as $response) {
                 $addressData = $response['addresses'];
+
                 unset($response['addresses']);
+                unset($response['dls_id']);
+                unset($response['dls_verified']);
 
                 $response['phones'] = $response['phones'][0];
 
                 $division = Division::firstOrNew(['uuid' => $response['id']]);
+
+                unset($response['id']);
+
                 $division->fill($response);
-                $division->setAttribute('uuid', $response['id']);
+                // $division->setAttribute('uuid', $response['id']);
                 $division->setAttribute('legal_entity_uuid', $response['legal_entity_id']);
                 $division->setAttribute('external_id', $response['external_id']);
                 $division->setAttribute('status', $response['status']);

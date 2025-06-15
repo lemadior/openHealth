@@ -34,19 +34,26 @@ class EHealthLoginUserHandler
      */
     public function checkLoginedUser(LegalEntity $legalEntity, string $authUserUUID): ?User
     {
-        // Get user trying to login
+        /* Get user trying to login */
         $alreadyAuthorizedUser = User::where('uuid', $authUserUUID)->first();
         $authLegalEntityUUID = $legalEntity->uuid;
 
         if ($alreadyAuthorizedUser) {
-            // Check if user has more than one Employee Role that hasn't been authorized
+            /* Check if user has connection to selected Legal Entity */
+            if (!$alreadyAuthorizedUser->hasAccessToLegalEntityByUuid($authLegalEntityUUID)) {
+                Log::error(__('auth.login.error.user_authentication', [], 'en') . __(" User {$alreadyAuthorizedUser->uuid} does not have required access to LegalEntity {$authLegalEntityUUID} after sync."));
+
+                return null;
+            }
+
+            /* Check if user has more than one Employee Role that hasn't been authorized */
             if (!$this->employeeRepository->authenticateNewEmployees($authLegalEntityUUID, $alreadyAuthorizedUser, $authUserUUID)) {
                 Log::error(__('auth.login.error.user_authentication', [], 'en'));
 
                 return null;
             }
 
-            // Check employee for updates
+            /* Check employee for updates */
             if (!$this->employeeRepository->checkForEmployeeUpdate($authLegalEntityUUID, $alreadyAuthorizedUser, $authUserUUID)) {
                 Log::error(__('auth.login.error.user_employee_update', [], 'en'));
 
@@ -56,7 +63,7 @@ class EHealthLoginUserHandler
             return $alreadyAuthorizedUser;
         }
 
-        // If user not found, try to get user from eHealth response by Get User Details request
+        /* If user not found, try to get user from eHealth response by Get User Details request */
         $authorizedUserValidator = $this->validateUserDetailsResponse(EmployeeApi::getUserDetails());
 
         /** @var \Illuminate\Contracts\Validation\Validator $authorizedUserValidator */
@@ -71,24 +78,34 @@ class EHealthLoginUserHandler
         $userUUID = $authorizedUserData['id'];
         $userEmail = $authorizedUserData['email'];
 
-        // Check if user doesn't change email through ESOZ login
+        /* Check if user doesn't change email through ESOZ login */
         if ($userUUID !== $authUserUUID) {
             Log::error(__('auth.login.error.user_identity', [], 'en'));
 
             return null;
         }
 
-        $user = User::byEmailAndLegalEntity($userEmail, $legalEntity->id)->first();
+        $user = User::where('email', $userEmail)->first();
 
-        // Get Employee or EmployeeRequest instance for specified user and it's Legal Entity ID
+        if (!$user) {
+            Log::error(__('auth.login.error.user_not_found_by_email', [], 'en') . ": {$userEmail}");
+
+            return null;
+        }
+
+        $user->setLegalEntity($legalEntity);
+
+        /* Get Employee or EmployeeRequest instance for specified user and it's Legal Entity ID */
         $employeeRequest = EmployeeRequest::employeeInstance($user->id, $legalEntity->uuid, ['OWNER'], true)->first();
 
         $isAuntenticated = $employeeRequest
             ? $this->employeeRepository->authenticateNewOwner($employeeRequest, $user, $authUserUUID)
             : $this->employeeRepository->authenticateNewEmployees($legalEntity->uuid, $user, $authUserUUID);
 
-        // Logout if user is not authenticated properly
+        /* Logout if user is not authenticated properly */
         if (!$isAuntenticated) {
+            Log::error(__('auth.login.error.user_authentication', [], 'en'), ['error' => 'Wrong authenticateNewOwner or authenticateNewEmployees workflow'] );
+
             return null;
         }
 

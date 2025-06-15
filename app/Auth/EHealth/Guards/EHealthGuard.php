@@ -2,11 +2,14 @@
 
 namespace App\Auth\EHealth\Guards;
 
+use Exception;
+use App\Models\User;
+use App\Models\LegalEntity;
 use Illuminate\Http\Request;
 use Illuminate\Auth\SessionGuard;
-use App\Auth\EHealth\Services\TokenStorage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\Session\Session;
+use App\Auth\EHealth\Services\TokenStorage;
 use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
 
@@ -46,6 +49,34 @@ class EHealthGuard extends SessionGuard
 
         if ($uuid) {
             $this->user = $this->provider->retrieveById($uuid);
+
+            if ($this->user instanceof User) {
+                $selectedLegalEntityId = session('selected_legal_entity_id');
+
+                if($selectedLegalEntityId) {
+                    $legalEntity = LegalEntity::find($selectedLegalEntityId);
+
+                    if ($legalEntity && $this->user->hasAccessToLegalEntityByUuid($legalEntity->uuid)) {
+                        $this->user->setLegalEntity($legalEntity);
+                    } else {
+                        Log::warning(__("Selected LegalEntity ID {$selectedLegalEntityId} from session is invalid or user has no access"));
+
+                        session()->forget('selected_legal_entity_id');
+
+                        $this->logout();
+
+                        return null;
+                    }
+                } else {
+                    Log::warning(__("No selected LegalEntity ID in session and no accessible LegalEntities for user {$this->user->id}"));
+
+                    session()->forget('selected_legal_entity_id');
+
+                    $this->logout();
+
+                    return null;
+                }
+            }
         }
 
         return $this->user;
@@ -74,7 +105,7 @@ class EHealthGuard extends SessionGuard
         if (! $this->tokenStorage->hasBearerToken()) {
             Log::error(__('Bearer token missing in session', [], 'en'));
 
-            throw new \Exception('Bearer token missing in session');
+            throw new Exception(__('Bearer token missing in session'));
         }
 
         $this->updateSession($this->getUserUUID($user));
@@ -82,6 +113,20 @@ class EHealthGuard extends SessionGuard
         $this->fireLoginEvent($user, $remember);
 
         $this->setUser($user);
+
+        if ($user instanceof User) {
+            $legalEntity = $user->legalEntity;
+
+            if ($legalEntity) {
+                session()->put('selected_legal_entity_id',  $legalEntity->id);
+            } else {
+                Log::error(__("LegalEntity was not properly set for user {$user->id} before EHealthGuard::login()"));
+
+                $this->logout();
+
+                throw new Exception(__('Selected LegalEntity invalid or inavailable'));
+            }
+        }
     }
 
     public function logout()
@@ -89,5 +134,7 @@ class EHealthGuard extends SessionGuard
         parent::logout();
 
         $this->tokenStorage->clear();
+
+        session()->forget('selected_legal_entity_id');
     }
 }

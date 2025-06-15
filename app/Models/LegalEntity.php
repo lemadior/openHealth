@@ -55,7 +55,6 @@ class LegalEntity extends Model
         'accreditation' => 'array',
         'archive' => 'array',
         'edr' => 'array',
-        'residence_address' => 'array',
         'inserted_at' => 'datetime',
         'updated_at' => 'datetime',
         'id' => 'string',

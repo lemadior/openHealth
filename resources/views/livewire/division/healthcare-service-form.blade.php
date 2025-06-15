@@ -179,7 +179,7 @@
 
     <div class="footer flex flex-start border-stroke px-7 py-2 my-4">
         <x-secondary-button>
-            <a href="{{ route('division.index') }}">
+            <a href="{{ route('division.index', ['legal_entity_id' => legalEntity()->id]) }}">
                 {{ __('Назад') }}
             </a>
         </x-secondary-button>

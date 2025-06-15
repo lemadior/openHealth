@@ -596,7 +596,7 @@ class EmployeeRepository
      */
     protected function getRevisionEmployeeData(EmployeeRequest $employeeRequest): array
     {
-        $revisionData = json_decode($employeeRequest->revision->data, true);
+        $revisionData = $employeeRequest->revision->data;
 
         $employee = $employeeRequest->employee;
 
