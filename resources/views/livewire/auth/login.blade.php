@@ -23,7 +23,7 @@
                     autocomplete="off"
                     wire:model="email"
                     aria-describedby="{{ $hasEmailError ? 'hasEmailErrorHelp' : '' }}"
-                    class="input {{ $hasEmailError  ? 'input-error border-red-500 focus:border-red-500' : ''}} peer"
+                    class="input peer {{ $hasEmailError ? 'input-error border-red-500 focus:border-red-500' : '' }} {{ !empty($email) ? 'not-empty' : '' }}"
                 />
 
                 @if($hasEmailError)
@@ -116,3 +116,5 @@
         </form>
     </x-authentication-card>
 </div>
+
+<x-forms.autofill-detector />

@@ -97,6 +97,12 @@ input:-webkit-autofill:active {
     background-clip: text !important;
 }
 
+input.not-empty + label,
+input.not-empty ~ label {
+    @apply text-blue-600 dark:text-blue-500 scale-75 -translate-y-6;
+}
+
+
 .input-select {
     @apply input text-gray-500 dark:text-gray-400 dark:border-gray-700 dark:focus:border-blue-500 dark:bg-gray-800
 }

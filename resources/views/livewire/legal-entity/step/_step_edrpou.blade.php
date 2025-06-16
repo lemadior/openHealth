@@ -19,15 +19,22 @@
         <legend x-text="title" class="legend"></legend>
     </template>
 
+    <!-- Autofill Trap -->
+    <x-forms.autofill-trap />
+
+    <!-- Main Form part -->
     <div class='form-row-3'>
         <div class="form-group group" x-id="['edrpou']">
             <input
+            role="none"
                 required
                 type="text"
                 :id="$id('edrpou')"
                 maxlength="10"
                 placeholder=" "
                 value="{{ $edrpou ?? '' }}"
+                autocomplete="off"
+                name="edrpou_{{ uniqid() }}"
                 wire:model="legalEntityForm.edrpou"
                 aria-describedby="{{ $hasEdrpouError ? 'edrpouErrorHelp' : '' }}"
                 class="input {{ $hasEdrpouError ? 'input-error border-red-500 focus:border-red-500' : ''}} peer"
@@ -47,3 +54,5 @@
         </div>
     </div>
 </fieldset>
+
+<x-forms.autofill-detector />
