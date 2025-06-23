@@ -35,6 +35,7 @@ use App\Livewire\Division\HealthcareServiceForm;
 use App\Livewire\License\Forms\CreateNewLicense;
 use App\Livewire\Patient\Records\PatientEpisodes;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Livewire\Dashboard;
 use App\Models\LegalEntity;
 
 /*
@@ -80,9 +81,11 @@ Route::middleware(['auth:ehealth', 'can:access,legalEntity'])->prefix('/dashboar
 
     Route::get('/edit', EditLegalEntity::class)->name('legal-entity.edit');
 
-    Route::get('/', function (LegalEntity $legalEntity) {
-        return view('dashboard');
-    })->name('dashboard');
+    // Route::get('/', function (LegalEntity $legalEntity) {
+    //     return view('dashboard');
+    // })->name('dashboard');
+
+    Route::get('/', Dashboard::class)->name('dashboard');
 
     Route::prefix('division')->group(function () {
         Route::get('/', DivisionIndex::class)->name('division.index');
@@ -133,4 +136,3 @@ Route::middleware(['auth:ehealth', 'can:access,legalEntity'])->prefix('/dashboar
 Route::get('/{any}', function () {
     return view('errors.404');
 })->where('any', '.*');
-
