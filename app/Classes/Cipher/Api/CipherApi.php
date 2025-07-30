@@ -38,7 +38,8 @@ class CipherApi
         string $base64File,
         string $knedp,
         string $initiator,
-        string $taxId
+        string $taxId,
+        ?string $edrpou = null
     ): array|string
     {
         $this->dataSignature = base64_encode($dataSignature);
@@ -51,7 +52,7 @@ class CipherApi
             $this->loadData();
             $this->setSessionParameters();
             $this->uploadFile();
-            $this->verifyWithFileContainer($taxId, $initiator);
+            $this->verifyWithFileContainer($taxId, $edrpou, $initiator);
             $this->createKeyp();
             $this->getKeypCreator();
             return $this->getKeyp();
@@ -162,7 +163,7 @@ class CipherApi
      *
      * @return void
      */
-    public function verifyWithFileContainer(string $taxId, string $initiator): void
+    public function verifyWithFileContainer(string $taxId, ?string $edrpou, string $initiator): void
     {
         // Get needed data contains into the key
         $cipherResponse = $this->getFileContainerInfo($this->password)['signature'];
@@ -183,7 +184,7 @@ class CipherApi
         $inKeyEdrpou = $keyData['edrpou']['value'] ?? '';
 
         // Check if the certificate belongs to the organization
-        $isBusinessKey = !empty($inKeyEdrpou);
+        $isBusinessKey = !empty($inKeyEdrpou) || $edrpou === $taxId;
 
         // Get value of 'drfou' (IPN) field for key's owner {string|null}
         $inKeyDrfou = $keyData['drfou']['value'] ?? '';
@@ -213,7 +214,7 @@ class CipherApi
             }
 
             // Check for EDRPOU value match between key and form ones
-            if ($inKeyEdrpou !== $taxId) {
+            if ($inKeyEdrpou !== $taxId && $edrpou !== $taxId) {
                 ErrorHandler::throwError(
                     [
                         'message'      => __('validation.custom.cipher.edrpouDiffer'),
