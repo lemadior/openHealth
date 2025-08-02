@@ -6,6 +6,7 @@ namespace App\Livewire\DiagnosticReport;
 
 use App\Classes\eHealth\Api\PatientApi;
 use App\Classes\eHealth\Exceptions\ApiException;
+use App\Core\Arr;
 use App\Repositories\MedicalEvents\Repository;
 use Exception;
 use Illuminate\Support\Facades\Auth;
@@ -65,8 +66,8 @@ class DiagnosticReportCreate extends DiagnosticReportComponent
         }
 
         $base64EncryptedData = $this->sendEncryptedData(
-            $this->convertArrayKeysToSnakeCase($formattedData),
-            Auth::user()->tax_id
+            Arr::toSnakeCase($formattedData),
+            Auth::user()->party->taxId
         );
         PatientApi::submitDiagnosticReportPackage($this->patientUuid, ['signed_data' => $base64EncryptedData]);
 

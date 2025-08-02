@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Procedure;
 
 use App\Classes\eHealth\Api\PatientApi;
-use App\Core\Arr as CoreArr;
+use App\Core\Arr;
 use App\Repositories\MedicalEvents\Repository;
 use App\Traits\HandlesReasonReferences;
 use Illuminate\Support\Facades\Auth;
@@ -64,7 +64,7 @@ class ProcedureCreate extends ProcedureComponent
         try {
             $this->storeValidatedData($formattedData);
 
-            $base64EncryptedData = $this->sendEncryptedData(CoreArr::toSnakeCase($formattedData), Auth::user()->tax_id ?? '2690710542');
+            $base64EncryptedData = $this->sendEncryptedData(Arr::toSnakeCase($formattedData), Auth::user()->party->taxId);
             PatientApi::submitProcedurePackage($this->patientUuid, ['signed_data' => $base64EncryptedData]);
         } catch (Throwable $e) {
             $this->flashGeneralError();
