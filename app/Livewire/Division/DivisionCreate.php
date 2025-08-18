@@ -102,9 +102,9 @@ class DivisionCreate extends DivisionComponent
 
         if ($response) {
             // Repository::division()->syncDivisionData($this->divisionForm->division, legalEntity()); // TODO: realize it on the next PRs
-            Repository::division()->saveDivisionData($response, legalEntity()); // TODO: Remove it after the syncDivisionData() will works
+            $division = Repository::division()->saveDivisionData($response, legalEntity()); // TODO: Remove it after the syncDivisionData() will works
 
-            return redirect()->route('division.index', [legalEntity()])->with('success', __('Запит виконано успішно'));
+            return redirect()->route('division.edit', [legalEntity(), $division])->with('success', __('Запит виконано успішно'));
         }
 
         session()->flash('error', __('Помилка в процесі обробки запиту'));

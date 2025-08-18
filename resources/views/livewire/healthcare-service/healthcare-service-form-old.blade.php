@@ -11,17 +11,15 @@
                     class="flex justify-end border-stroke px-7 py-4 dark:border-strokedark"
                     x-cloak
                 >
-                @can('create', \App\Models\HealthcareService::class)
                     <button
                         x-show="isDivisionActive"
                         type="button"
                         wire:click="create"
-                        {{-- class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" --}}
-                        class="button-primary cursor-pointer mx-2"
+                        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
                     >
                         {{ __('forms.add_healthcare_service') }}
                     </button>
-                @endcan
+
                     <button wire:click="sync" class="button-sync">
                         {{ __('forms.synchronise_with_eHealth') }}
                     </button>
@@ -133,8 +131,7 @@
                                                             style="display: none;"
                                                             class="absolute right-0 mt-2 w-40 rounded-md bg-white shadow-md z-50"
                                                         >
-                                                                                                                        {{-- @if ($service->status == \App\Enums\Status::ACTIVE) --}}
-                                                            @can('update', $service)
+                                                            @if ($service->status == \App\Enums\Status::ACTIVE)
                                                                 <a
                                                                     wire:click="edit({{ $service }}); toggle()"
                                                                     href="#"
@@ -142,9 +139,6 @@
                                                                 >
                                                                     {{ __('forms.edit') }}
                                                                 </a>
-                                                            @endcan
-
-                                                            @can('deactivate', $service)
                                                                 <a
                                                                     href="#"
                                                                     wire:click="deactivate({{ $service }}); toggle()"
@@ -152,9 +146,7 @@
                                                                 >
                                                                     {{ __('forms.deactivate') }}
                                                                 </a>
-                                                            @endcan
-
-                                                            @can('activate', $service)
+                                                            @else
                                                                 <a
                                                                     href="#"
                                                                     wire:click="activate({{ $service }}); toggle()"
@@ -162,18 +154,7 @@
                                                                 >
                                                                     {{ __('forms.activate') }}
                                                                 </a>
-                                                            @endcan
-                                                            {{-- @else --}}
-                                                            @can('viewAny', \App\Models\HealthcareService::class)
-                                                                <a
-                                                                    href="#"
-                                                                    wire:click="activate({{ $service }}); toggle()"
-                                                                    class="flex items-center gap-2 w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:text-gray-500"
-                                                                >
-                                                                    {{ __('Переглянути') }}
-                                                                </a>
-                                                            @endcan
-                                                            {{-- @endif --}}
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 </div>

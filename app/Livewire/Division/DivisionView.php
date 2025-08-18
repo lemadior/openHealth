@@ -9,7 +9,7 @@ use App\Models\LegalEntity;
 use App\Traits\AddressSearch;
 use App\Traits\WorkTimeUtilities;
 
-class DivisionShow extends DivisionComponent
+class DivisionView extends DivisionComponent
 {
     use WorkTimeUtilities,
         AddressSearch;
@@ -61,6 +61,6 @@ class DivisionShow extends DivisionComponent
      */
     public function render()
     {
-        return view('livewire.division.division-show');
+        return view('livewire.division.division-view');
     }
 }

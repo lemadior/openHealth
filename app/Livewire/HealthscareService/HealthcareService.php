@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire\Division;
+namespace App\Livewire\HealthscareService;
 
 use Log;
 use Exception;
@@ -50,7 +50,7 @@ class HealthcareService extends Component
     public ?string $category = '';
 
     public ?array $speciality_type_msp_keys = [
-        'PHARMACIST', 'PHARMACEUTICS_ORGANIZATION', 'CLINICAL_PROVISOR',
+        'PHARMACIST', '"PHARMACEUTICS_ORGANIZATION', 'CLINICAL_PROVISOR',
         'ANALYTICAL_AND_CONTROL_PHARMACY', 'PHARMACEUTICS_ORGANIZATION'
     ];
 
@@ -202,7 +202,7 @@ class HealthcareService extends Component
         $response = $this->mode === 'edit'
             ? $this->updateHealthcareService()
             : $this->createHealthcareService();
-        dd($response);
+
         if ($response) {
             Repository::healthcareService()
                 ->setDivision($this->division)
@@ -240,14 +240,11 @@ class HealthcareService extends Component
         $requestParams = Repository::healthcareService()
             ->setDivision($this->division)
             ->prepareRequestCreateData($healthcareServiceRawData);
-            $requestParams['category']['text'] = 'test category text';
-        dd($requestParams);
 
         try {
             return EHealth::healthcareService()->create(data: $requestParams)->validate();
         } catch (Exception $err) {
             Log::error(self::class . ':createHealthcareService', ['error' => $err->getMessage()]);
-            dd($err->getMessage());
         }
 
         return null;

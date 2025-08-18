@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Livewire\HealthscareService\HealthcareServiceIndex;
+use App\Livewire\HealthscareService\HealthcareServiceShow;
 use App\Models\License;
 use App\Models\LegalEntity;
 use App\Livewire\Auth\Login;
@@ -14,7 +16,7 @@ use App\Http\Controllers\Auth\EHealthLoginController;
 use App\Livewire\Declaration\DeclarationCreate;
 use App\Livewire\Division\DivisionCreate;
 use App\Livewire\Division\DivisionEdit;
-use App\Livewire\Division\DivisionShow;
+use App\Livewire\Division\DivisionView;
 use App\Livewire\Employee\EmployeeEdit;
 use App\Livewire\Employee\EmployeeShow;
 use App\Livewire\Employee\EmployeeIndex;
@@ -113,12 +115,21 @@ Route::middleware(['auth:web,ehealth', 'verified'])->group(function () {
             ->can('create',  LegalEntity::class)
             ->name('legal-entity.create');
 
+        // Route::get('/healthcare-services', HealthcareServiceIndex::class)->name('healthcare_service.index')->can('viewAny', HealthcareService::class);
+        // Route::get('/healthcare-services/create', HealthcareServiceCreate::class)->name('healthcare_service.edit')->can('viewAny', HealthcareService::class);
+
         Route::prefix('division')->middleware(['permission:division:read|division:details'])->group(function () {
             Route::get('/', DivisionIndex::class)->name('division.index')->can('viewAny', Division::class);
 
             Route::get('/create', DivisionCreate::class)->name('division.create')->can('create', Division::class);
-            Route::get('/{division}', DivisionShow::class)->name('division.show')->can('viewAny', Division::class);
+            Route::get('/{division}', DivisionView::class)->name('division.view')->can('viewAny', Division::class);
             Route::get('/{division}/edit', DivisionEdit::class)->name('division.edit')->can( 'update','division');
+
+            // Route::prefix('{division}/healthcare-service')->middleware(['permission:healthcare_service:read'])->group(function() {
+                // Route::get('/', HealthcareServiceIndex::class)->name('healthcare_service.index')->can('viewAny', HealthcareService::class);
+                // Route::get('/{healthcareService}', HealthcareServiceShow::class)->name('healthcare_service.view')->can('viewAny', HealthcareService::class);
+                // Route::get('/{healthcareService}/edit', HealthcareServiceEdit::class)->name('healthcare_service.create')->can('viewAny', HealthcareService::class);
+            // });
 
             Route::get('/{division}/healthcare-service', HealthcareService::class)->name('healthcare_service.index');
         });

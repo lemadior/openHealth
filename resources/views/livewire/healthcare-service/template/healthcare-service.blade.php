@@ -1,9 +1,19 @@
+@php
+    $divisionType = dictionary()->getDictionary('DIVISION_TYPE', false)->getValue($this->division->type);
+@endphp
+
 <div>
     <x-messages />
 
     <x-section-navigation x-data="{ showFilter: false }" class="">
-        <x-slot name="title">{{ __('forms.services') }}</x-slot>
-        <x-slot name="description">{{ $currentDivision['type'] }} '{{ $currentDivision['name'] }}'</x-slot>
+        <x-slot name='title'>
+            {{ __('Послуги') }}
+        </x-slot>
+
+        <x-slot name="description">
+            {{  $divisionType }} "{{ $division->name }}"
+        </x-slot>
+
         <x-slot name="navigation">
             <div class="rounded-sm border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
                 <div
@@ -11,17 +21,17 @@
                     class="flex justify-end border-stroke px-7 py-4 dark:border-strokedark"
                     x-cloak
                 >
-                @can('create', \App\Models\HealthcareService::class)
-                    <button
-                        x-show="isDivisionActive"
-                        type="button"
-                        wire:click="create"
-                        {{-- class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" --}}
-                        class="button-primary cursor-pointer mx-2"
-                    >
-                        {{ __('forms.add_healthcare_service') }}
-                    </button>
-                @endcan
+                    @can('create', \App\Models\HealthcareService::class)
+                        <button
+                            x-show="isDivisionActive"
+                            type="button"
+                            wire:click="create"
+                            class="button-primary cursor-pointer mx-2"
+                        >
+                            {{ __('forms.add_healthcare_service') }}
+                        </button>
+                    @endcan
+
                     <button wire:click="sync" class="button-sync">
                         {{ __('forms.synchronise_with_eHealth') }}
                     </button>
@@ -35,7 +45,7 @@
             <div class="inline-block min-w-full align-middle">
                 <div class="shadow">
                     <x-tables.table class="mb-20">
-                        <x-slot name="headers" :list="$tableHeaders"></x-slot>
+                        <x-slot name="headers" :list="$this->tableHeaders"></x-slot>
                         <x-slot name="tbody">
                             @nonempty($healthcareServices->items())
                                 @foreach ($healthcareServices as $k => $service)
@@ -133,7 +143,7 @@
                                                             style="display: none;"
                                                             class="absolute right-0 mt-2 w-40 rounded-md bg-white shadow-md z-50"
                                                         >
-                                                                                                                        {{-- @if ($service->status == \App\Enums\Status::ACTIVE) --}}
+                                                            {{-- @if ($service->status == \App\Enums\Status::ACTIVE) --}}
                                                             @can('update', $service)
                                                                 <a
                                                                     wire:click="edit({{ $service }}); toggle()"
@@ -167,10 +177,10 @@
                                                             @can('viewAny', \App\Models\HealthcareService::class)
                                                                 <a
                                                                     href="#"
-                                                                    wire:click="activate({{ $service }}); toggle()"
+                                                                    wire:click="show({{ $service }}); toggle()"
                                                                     class="flex items-center gap-2 w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:text-gray-500"
                                                                 >
-                                                                    {{ __('Переглянути') }}
+                                                                    {{ __('forms.view') }}
                                                                 </a>
                                                             @endcan
                                                             {{-- @endif --}}
@@ -199,12 +209,22 @@
     {{-- </div> --}}
 
     <div class="footer flex flex-start border-stroke px-7 py-2 my-4">
-        <x-secondary-button>
+        {{-- <x-secondary-button
+            onclick="window.history.back()
+        >
             <a href="{{ route('division.index', legalEntity()) }}">
                 {{ __('forms.back') }}
             </a>
-        </x-secondary-button>
+        </x-secondary-button> --}}
+        <button
+            type="button"
+            onclick="window.history.back()"
+            class="alternative-button cursor-pointer"
+        >
+            {{ __('forms.back') }}
+        </button>
     </div>
-    @include('livewire.division._parts._healthcare_service_form')
 
+    {{-- @include('livewire.healthcare-service.modals.healthcare_service_form') --}}
+    @yield('healthcare-modal')
 </div>
