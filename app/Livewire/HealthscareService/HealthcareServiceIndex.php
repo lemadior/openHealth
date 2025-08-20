@@ -70,14 +70,16 @@ class HealthcareServiceIndex extends HealthcareServiceComponent
 
     public bool $divisionStatus = false;
 
-    public function mount(LegalEntity $legalEntity, Division $division)
+    public function mount(LegalEntity $legalEntity, ?Division $division)
     {
         $this->dictionaries = [
             'show' => [],
             'modal' => []
         ];
 
-        $this->division = $division;
+        // if ($division) {
+        //     $this->division = $division;
+        // }
 
         $this->divisionStatus = $this->division->status === Status::ACTIVE;
 
@@ -294,12 +296,13 @@ class HealthcareServiceIndex extends HealthcareServiceComponent
         $response = null;
 
         try {
-            $response = EHealth::healthcareService()->getMany(divisionUuid: $this->division->uuid);
+            // $response = EHealth::healthcareService()->getMany(divisionUuid: $this->division->uuid);
+            $response = EHealth::healthcareService()->getMany();
 
             $healthcareServices = $response->validate();
 
             Repository::healthcareService()
-                ->setDivision($this->division)
+                // ->setDivision($this->division)
                 ->saveHealthcareServiceList($healthcareServices);
         } catch (Exception $err) {
             Log::error('HealthscareService repository [syncHealthcareServiceList]: ', ['error' => $err->getMessage()]);
@@ -400,8 +403,8 @@ class HealthcareServiceIndex extends HealthcareServiceComponent
     {
         $perPage = config('pagination.per_page');
         $healthcareServices = $this->division->healthcareService()->orderBy('uuid')->paginate($perPage);
-        $currentDivision['name'] = $this->division->name;
-        $currentDivision['type'] = dictionary()->getDictionary('DIVISION_TYPE', false)->getValue($this->division->type);
+        // $currentDivision['name'] = $this->division->name;
+        // $currentDivision['type'] = dictionary()->getDictionary('DIVISION_TYPE', false)->getValue($this->division->type);
 
         return view('livewire.healthcare-service.healthcare-service-index', compact(['healthcareServices']));
     }

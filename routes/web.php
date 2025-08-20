@@ -115,7 +115,7 @@ Route::middleware(['auth:web,ehealth', 'verified'])->group(function () {
             ->can('create',  LegalEntity::class)
             ->name('legal-entity.create');
 
-        // Route::get('/healthcare-services', HealthcareServiceIndex::class)->name('healthcare_service.index')->can('viewAny', HealthcareService::class);
+        Route::get('/healthcare-services', HealthcareServiceIndex::class)->name('healthcare_service.index')->can('viewAny', HealthcareService::class);
         // Route::get('/healthcare-services/create', HealthcareServiceCreate::class)->name('healthcare_service.edit')->can('viewAny', HealthcareService::class);
 
         Route::prefix('division')->middleware(['permission:division:read|division:details'])->group(function () {
@@ -131,7 +131,7 @@ Route::middleware(['auth:web,ehealth', 'verified'])->group(function () {
                 // Route::get('/{healthcareService}/edit', HealthcareServiceEdit::class)->name('healthcare_service.create')->can('viewAny', HealthcareService::class);
             // });
 
-            Route::get('/{division}/healthcare-service', HealthcareService::class)->name('healthcare_service.index');
+            // Route::get('/{division}/healthcare-service', HealthcareService::class)->name('healthcare_service.index');
         });
 
         Route::prefix('employee')->name('employee.')->middleware('auth')->group(function () {

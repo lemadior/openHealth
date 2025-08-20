@@ -174,6 +174,7 @@ class HealthcareServiceRepository
      */
     public function saveHealthcareServiceResponseData(array $responseData): HealthcareService
     {
+        dd($responseData);
         $division = $this->getDivision();
 
         $healthcareService = $this->createOrUpdate($responseData);

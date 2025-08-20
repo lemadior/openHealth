@@ -33,12 +33,15 @@ class HealthcareService extends Request
      *
      * @return PromiseInterface|EHealthResponse
      */
-    public function getMany(string $divisionUuid, string $url = self::URL, $query = null): PromiseInterface|EHealthResponse
+    public function getMany(string $divisionUuid = null, string $url = self::URL, $query = null): PromiseInterface|EHealthResponse
     {
         $this->setValidator($this->validateHealthcareServicesList(...));
 
         $this->setDefaultPageSize();
-        $this->setDivisionUuidToQuery($divisionUuid);
+
+        if ($divisionUuid) {
+            $this->setDivisionUuidToQuery($divisionUuid);
+        }
 
         $mergedQuery = array_merge(
     $this->options['query'] ?? [],

@@ -22,7 +22,7 @@ use Livewire\Features\SupportRedirects\Redirector;
 use App\Livewire\Division\Forms\HealthcareServiceForm as HealthCareFormRequest;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
-class HealthcareServiceShow extends HealthcareServiceComponent
+class HealthcareServiceView extends HealthcareServiceComponent
 {
     use WithPagination;
     // use FormTrait;
