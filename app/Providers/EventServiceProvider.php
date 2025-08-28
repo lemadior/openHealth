@@ -3,10 +3,12 @@
 namespace App\Providers;
 
 use App\Events\ApplyUserTeamId;
+use App\Events\EHealthUserLogin;
 use App\Listeners\ApplyUserTeamIdListener;
 use App\Listeners\EmailVerification;
 use App\Listeners\LogLockout;
-use App\Events\LegalEntityCreate;
+use App\Listeners\StartDivisionSyncListener;
+use App\Listeners\SyncCurrentEmployeeListener;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Auth\Events\Registered;
 use App\Listeners\SendUserCredentialsListener;
@@ -27,6 +29,10 @@ class EventServiceProvider extends ServiceProvider
         Lockout::class => [
             LogLockout::class
         ],
+        EHealthUserLogin::class => [
+            SyncCurrentEmployeeListener::class,
+            StartDivisionSyncListener::class
+        ]
     ];
 
     /**

@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected const array validStatuses = [
+        'ACTIVE',
+        'INACTIVE',
+        'DRAFT',
+        'UNSYNCED'
+    ];
+
     /**
      * Run the migrations.
      */
@@ -14,7 +21,7 @@ return new class extends Migration
     {
         Schema::create('divisions', function (Blueprint $table) {
                 $table->id();
-                $table->uuid('uuid')->unique();
+                $table->uuid('uuid')->unique()->nullable();
                 $table->string('external_id')->nullable();
                 $table->string('name');
                 $table->string('type')->nullable();
@@ -23,9 +30,9 @@ return new class extends Migration
                 $table->string('email');
                 $table->jsonb('working_hours')->nullable();
                 $table->boolean('is_active')->default(false);
-                $table->uuid('legal_entity_uuid')->nullable();
+                // $table->uuid('legal_entity_uuid')->nullable();
                 $table->foreignId('legal_entity_id')->constrained('legal_entities')->cascadeOnDelete()->cascadeOnUpdate();
-                $table->enum('status', Status::only(['ACTIVE', 'INACTIVE']))->nullable();
+                $table->enum('status', Status::only(self::validStatuses))->nullable();
                 $table->timestamps();
         });
     }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Livewire\Division\DivisionView;
 use App\Models\License;
 use App\Models\LegalEntity;
 use App\Livewire\Auth\Login;
@@ -117,7 +118,7 @@ Route::middleware(['auth:web,ehealth', 'verified'])->group(function () {
             Route::get('/', DivisionIndex::class)->name('division.index')->can('viewAny', Division::class);
 
             Route::get('/create', DivisionCreate::class)->name('division.create')->can('create', Division::class);
-            Route::get('/{division}', DivisionShow::class)->name('division.show')->can('viewAny', Division::class);
+            Route::get('/{division}', DivisionView::class)->name('division.view')->can('viewAny', Division::class);
             Route::get('/{division}/edit', DivisionEdit::class)->name('division.edit')->can( 'update','division');
 
             Route::get('/{division}/healthcare-service', HealthcareService::class)->name('healthcare_service.index');

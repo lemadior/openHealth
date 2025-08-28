@@ -6,6 +6,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @mixin IdeHelperDeclarationRequest
+ */
 class DeclarationRequest extends Model
 {
 }

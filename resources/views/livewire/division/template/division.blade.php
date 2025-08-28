@@ -10,7 +10,15 @@
     };
 @endphp
 
-<div>
+<div
+    x-data="{
+        divisionId: 0,
+        textConfirmation: '',
+        actionType: '',
+        actionTitle: '',
+        actionButtonText: ''
+    }"
+>
     <x-messages />
 
     <x-section-navigation x-data="{ showFilter: false }" class=''>
@@ -25,8 +33,7 @@
 
     <section class="section-form">
          <div class="form-row" x-data="{ isDisabled: @json($readonly) }">
-            {{-- <form submit="{{ $action }}"> --}}
-                <form submit="{{ $action }}">
+            <form submit="{{ $action }}">
 
                 @if (!in_array(strtoupper($httpMethod), ['GET', 'POST']))
                     @method($httpMethod)
@@ -52,7 +59,7 @@
                                 <x-slot name='input'>
                                     <x-forms.input
                                         class='default-input'
-                                        wire:model='divisionForm.division.name'
+                                        wire:model.defer='divisionForm.division.name'
                                         type='text'
                                         id='name'
                                         x-bind:disabled="isDisabled"
@@ -77,7 +84,7 @@
                                 <x-slot name='input'>
                                     <x-forms.input
                                         class='default-input'
-                                        wire:model='divisionForm.division.email'
+                                        wire:model.defer='divisionForm.division.email'
                                         type='text'
                                         id='email'
                                         x-bind:disabled="isDisabled"
@@ -102,7 +109,7 @@
                                 <x-slot name='input'>
                                     <x-forms.select
                                         class='default-input'
-                                        wire:model='divisionForm.division.type'
+                                        wire:model.defer='divisionForm.division.type'
                                         type='text'
                                         id='type'
                                         x-bind:disabled="{{ ($action === 'update' && $status !== 'DRAFT') || $action === 'show' ? 'true' : 'false' }}"
@@ -134,7 +141,7 @@
                                 <x-slot name='input'>
                                     <x-forms.input
                                         class='default-input'
-                                        wire:model='divisionForm.division.external_id'
+                                        wire:model.defer='divisionForm.division.external_id'
                                         type='text'
                                         id='external_id'
                                         x-bind:disabled="{{ ($action === 'update' && $status !== 'DRAFT') || $action === 'show'? 'true' : 'false' }}"
@@ -149,7 +156,7 @@
                                 @enderror
                             </x-forms.form-group>
 
-                            <!-- PHONE TYPE -->
+                            <!-- PHONES -->
                             <x-forms.form-group>
                                 <x-slot name='label'>
                                     <x-forms.label for='phone_type' class='default-label'>
@@ -158,7 +165,7 @@
                                 </x-slot>
                                 <x-slot name='input'>
                                     <x-forms.select
-                                        wire:model.defer='divisionForm.division.phones.type'
+                                        wire:model.defer='divisionForm.division.phones.0.type'
                                         class='default-select'
                                         id="phone_type"
                                         x-bind:disabled="isDisabled"
@@ -172,7 +179,7 @@
                                             @endforeach
                                         </x-slot>
                                     </x-forms.select>
-                                    @error('divisionForm.division.phones.type')
+                                    @error('divisionForm.division.phones.0.type')
                                         <x-forms.error>
                                             {{ $message }}
                                         </x-forms.error>
@@ -180,7 +187,6 @@
                                 </x-slot>
                             </x-forms.form-group>
 
-                            <!-- PHONES -->
                             <x-forms.form-group>
                                 <x-slot name='label'>
                                     <x-forms.label for='phone' class='default-label'>
@@ -192,11 +198,11 @@
                                         id='phone'
                                         class='default-input'
                                         x-mask='+380999999999'
-                                        wire:model='divisionForm.division.phones.number'
+                                        wire:model.defer='divisionForm.division.phones.0.number'
                                         type='text'
                                         x-bind:disabled="isDisabled"
                                     />
-                                    @error('divisionForm.division.phones.number')
+                                    @error('divisionForm.division.phones.0.number')
                                         <x-forms.error>
                                             {{ $message }}
                                         </x-forms.error>
@@ -204,6 +210,7 @@
                                 </x-slot>
                             </x-forms.form-group>
 
+                            <!-- LOCATION -->
                             <x-forms.form-group>
                                 <x-slot name='label'>
                                     <x-forms.label for='longitude' class='default-label'>
@@ -214,10 +221,12 @@
                                     <x-forms.input
                                         id='longitude'
                                         class='default-input'
-                                        x-mask='99.999999'
                                         wire:model='divisionForm.division.location.longitude'
-                                        type='text'
+                                        type='number'
+                                        step="0.01"
+                                        x-ref="longitude"
                                         x-bind:disabled="isDisabled"
+                                        x-effect="$refs.longitude.value == 0 ? $refs.longitude.value = null : $refs.longitude.value"
                                     />
                                     @error('divisionForm.division.location.longitude')
                                         <x-forms.error>
@@ -237,10 +246,12 @@
                                     <x-forms.input
                                         id='latitude'
                                         class='default-input'
-                                        x-mask='99.999999'
                                         wire:model='divisionForm.division.location.latitude'
-                                        type='text'
+                                        type='number'
+                                        step="0.01"
                                         x-bind:disabled="isDisabled"
+                                        x-ref="latitude"
+                                        x-effect="$refs.latitude.value == 0 ? $refs.latitude.value = null : $refs.latitude.value"
                                     />
                                     @error('divisionForm.division.location.latitude')
                                         <x-forms.error>
@@ -283,16 +294,30 @@
                                 </button>
                             </h3>
                             @if($action === 'store')
-                                <p x-show='working' x-cloak class="pt-4 text-xs italic text-orange-500">{{ __('forms.schedule_note') }}</p>
+                                <p
+                                    x-cloak
+                                    x-show='working'
+                                    class="pt-4 text-xs italic text-orange-500"
+                                >
+                                    {{ __('forms.schedule_note') }}
+                                </p>
                             @endif
                         </div>
 
                         @if ($weekdays)
-                            <div x-show='working' class='grid grid-cols-2 gap-6 w-full'>
+                            <div
+                                x-cloak
+                                x-show='working'
+                                class='grid grid-cols-2 gap-6 w-full'
+                            >
                                 @foreach ($weekdays as $key => $day)
+
                                     <div :key={{ $key }} x-data="{
-                                            shift: @json(count($divisionForm->getDivisionParam('working_hours')[$key]) > 1),
-                                            show_work: @json(!empty($divisionForm->getDivisionParam('working_hours')[$key][0]) || $action === 'store'),
+                                            shift: @json(count($divisionForm->division['working_hours'][$key]) > 1),
+                                            show_work: @json(
+                                                $divisionForm->division['working_hours'][$key][0][0] !== '00:00' ||
+                                                $divisionForm->division['working_hours'][$key][0][1] !== '00:00' ||
+                                                $action === 'store'),
                                             checkShift() {
                                                 this.shift = !this.show_work;
                                             }
@@ -332,8 +357,9 @@
                                                                 </label>
                                                             </div>
 
-                                                            @if (count($divisionForm->getDivisionParam('working_hours')[$key]) < 4)
+                                                            @if (count($divisionForm->division['working_hours'][$key]) < 4)
                                                                 <x-button
+                                                                    x-cloak
                                                                     x-show='shift'
                                                                     class='font-semibold text-[10px] text-left text-gray-500 uppercase hover:text-gray-900 active:text-gray-900'
                                                                     @click.prevent=''
@@ -348,11 +374,12 @@
                                                 </x-slot>
                                             </x-forms.form-group>
 
-                                            @if($action === 'store' || !empty($divisionForm->getDivisionParam('working_hours')[$key]))
+                                            @if($action === 'store' || !empty($divisionForm->division['working_hours'][$key]))
                                             <div class='flex items-center flex-col flex-wrap gap-2 mb-4 w-full'>
-                                            @foreach ($divisionForm->getDivisionParam('working_hours')[$key] as $shift => $shift_hours)
+                                            @foreach ($divisionForm->division['working_hours'][$key] as $shift => $shift_hours)
                                                 <div class='flex  justify-between gap-4 mb-4 w-full w-1/4'>
                                                     <x-forms.form-group
+                                                        x-cloak
                                                         x-show="show_work"
                                                         class="w-1/2"
                                                     >
@@ -367,7 +394,7 @@
                                                         <x-slot name='input'>
                                                             <x-forms.input-time
                                                                 id="opened_by-{{ $key }}-{{ $shift }}"
-                                                                wire:model="divisionForm.division.working_hours.{{ $key }}.{{ $shift }}.0"
+                                                                wire:model.defer="divisionForm.division.working_hours.{{ $key }}.{{ $shift }}.0"
                                                                 x-bind:disabled="isDisabled"
                                                             />
                                                         </x-slot>
@@ -379,6 +406,7 @@
                                                     </x-forms.form-group>
 
                                                     <x-forms.form-group
+                                                        x-cloak
                                                         x-show="show_work"
                                                         class="w-1/2"
                                                     >
@@ -392,7 +420,7 @@
                                                         <x-slot name='input'>
                                                             <x-forms.input-time
                                                                 id="closed_by-{{ $key }}-{{ $shift }}"
-                                                                wire:model="divisionForm.division.working_hours.{{ $key }}.{{ $shift }}.1"
+                                                                wire:model.defer="divisionForm.division.working_hours.{{ $key }}.{{ $shift }}.1"
                                                                 x-bind:disabled="isDisabled"
                                                             />
                                                         </x-slot>
@@ -405,10 +433,11 @@
 
                                                     <div class="self-center pt-6" x-data="{ isShift: {{ $shift > 0 ? 'true' : 'false' }} }">
                                                         <x-button
-                                                            x-show="shift && isShift && show_work && isDisabled"
+                                                            x-cloak
+                                                            x-show="shift && isShift && show_work && !isDisabled"
                                                             @click.prevent=''
                                                             wire:click="deleteShift('{{ $key }}', '{{ $shift }}')"
-                                                            class="px-2 py-1  text-red-500 text-2xl font-bold rounded"
+                                                            class="px-2 py-1  text-red-500 text-2xl font-bold rounded cursor-pointer"
                                                         >
                                                             ☒
                                                         </x-button>
@@ -459,4 +488,7 @@
             </form>
         </div>
     </section>
+
+    @include('livewire.division.modal.confirmation-modal')
+
 </div>

@@ -99,6 +99,7 @@ return [
     'send_files' => 'Відправити файли',
     'max_file_size_and_format' => 'Розмір завантажуваного файлу не більше 10МБ у форматі jpeg',
     'select_filter' => 'Оберіть фільтр',
+    'success_response' => 'Запит виконано успішно',
 
     // Legal Entity
     'legal_entity_name' => 'Медична організація',
@@ -435,6 +436,7 @@ return [
         'dismissed' => 'Звільнено',
         'active' => 'Активний',
         'non_active' => 'Не активний',
-        'draft' => 'Чернетка'
+        'draft' => 'Чернетка',
+        'unsynced' => 'Не синхронізовано' 
     ]
 ];

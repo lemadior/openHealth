@@ -1,4 +1,12 @@
-<div>
+<div
+    x-data="{
+        divisionId: 0,
+        textConfirmation: '',
+        actionType: '',
+        actionTitle: '',
+        actionButtonText: ''
+    }"
+>
     <x-messages />
 
     <x-section-navigation x-data="{ showFilter: false }" class="">
@@ -33,32 +41,36 @@
                         @nonempty($divisions->items())
                             @foreach ($divisions as $division)
                                 <tr x-data="{ divisionTypes: @entangle('dictionaries.DIVISION_TYPE') }">
-                                    <td class="p-4 text-sm text-center font-normal text-gray-500 whitespace-nowrap dark:text-gray-400">
-                                        <p class="font-semibold text-gray-900 dark:text-white">
-                                            {{ $division->uuid ?? '' }}
-                                        </p>
-                                    </td>
+                                    <!-- NAME -->
                                     <td class="p-4 text-sm font-normal text-center text-gray-500 whitespace-nowrap dark:text-gray-400">
                                         <p class="text-gray-900 dark:text-white">
                                             {{ $division->name ?? '' }}
                                         </p>
                                     </td>
+                                    <!-- TYPE -->
                                     <td x-text="divisionTypes['{{ $division->type }}']" class="p-4 text-sm font-normal text-center text-gray-500 whitespace-nowrap dark:text-gray-400">
                                         <p class="text-gray-900 dark:text-white"></p>
                                     </td>
+                                    <!-- PHONE -->
                                     <td class="p-4 text-sm font-normal text-center text-gray-500 whitespace-nowrap dark:text-gray-400">
                                         <p class="inline-flex items-center font-medium text-blue-600 dark:text-blue-500">
                                             {{ $division->phones()->first()?->number ?? '' }}
                                         </p>
                                     </td>
+                                    <!-- EMAIL -->
                                     <td class="p-4 text-sm font-normal text-center text-gray-500 whitespace-nowrap dark:text-gray-400">
                                         <p class="inline-flex items-center font-medium text-gray-600 dark:text-gray-500">
                                             {{ $division->email ?? '' }}
                                         </p>
                                     </td>
+                                    <!-- STATUS -->
                                     <td class="p-4 text-sm font-normal text-center text-gray-500 whitespace-nowrap dark:text-gray-400">
                                         @if ($division->status ==  \App\Enums\Status::INACTIVE)
                                             <span class="rejected text-meta-1">{{ __('forms.status.non_active') }}</span>
+                                        @elseif ($division->status ==  \App\Enums\Status::DRAFT)
+                                            <span class="new text-meta-3">{{ __('forms.status.draft') }}</span>
+                                        @elseif ($division->status ==  \App\Enums\Status::UNSYNCED)
+                                            <span class="dismissed text-meta-3">{{ __('forms.status.unsynced') }}</span>
                                         @else
                                             <span class="approved text-meta-3">{{ __('forms.status.active') }}</span>
                                         @endif
@@ -113,6 +125,7 @@
                                                     </svg>
                                                 </button>
                                                 <div
+                                                    x-cloak
                                                     x-ref="panel"
                                                     x-show="open"
                                                     x-transition.origin.top.left
@@ -121,7 +134,7 @@
                                                     class="absolute right-0 mt-2 w-40 rounded-md bg-white shadow-md z-50"
                                                 >
                                                     <a
-                                                        href="{{ route('division.show', [legalEntity(), $division]) }}"
+                                                        href="{{ route('division.view', [legalEntity(), $division]) }}"
                                                         class="flex items-center gap-2 w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:text-gray-500"
                                                         >
                                                             {{ __('forms.view') }}
@@ -136,7 +149,14 @@
                                                     @endcan
                                                     @can('deactivate', $division)
                                                         <a
-                                                            wire:click="deactivate({{ $division }}); open = !open"
+                                                            x-on:click.prevent="
+                                                                divisionId={{ $division->id }};
+                                                                textConfirmation=@js(__('divisions.modals.deactivate.confirmation_text'));
+                                                                actionType='deactivate';
+                                                                actionTitle=@js(__('divisions.modals.deactivate.title'));
+                                                                actionButtonText=@js(__('forms.deactivate'));
+                                                                open = !open;
+                                                            "
                                                             href="#"
                                                             class="flex items-center gap-2 w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:text-gray-500"
                                                         >
@@ -144,20 +164,43 @@
                                                         </a>
                                                     @endcan
                                                     {{-- @can('services', $division) --}}
-                                                        <a
+                                                        <!-- <a
                                                         href="{{ route('healthcare_service.index', [legalEntity(), $division]) }}"
                                                         class="flex items-center gap-2 w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:text-gray-500"
                                                         >
                                                             {{ __('forms.services') }}
-                                                        </a>
+                                                        </a> -->
                                                     {{-- @endcan --}}
                                                     @can('activate', $division)
                                                         <a
-                                                            wire:click="activate({{ $division }}); open = !open"
+                                                            x-on:click.prevent="
+                                                                divisionId={{ $division->id }};
+                                                                textConfirmation=@js(__('divisions.modals.activate.confirmation_text'));
+                                                                actionType='activate';
+                                                                actionTitle=@js(__('divisions.modals.activate.title'));
+                                                                actionButtonText=@js(__('forms.activate'));
+                                                                open = !open;
+                                                            "
                                                             href="#"
                                                             class="flex items-center gap-2 w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:text-gray-500"
                                                         >
                                                             {{ __('forms.activate') }}
+                                                        </a>
+                                                    @endcan
+                                                    @can('delete', $division)
+                                                        <a
+                                                            x-on:click.prevent="
+                                                                divisionId={{ $division->id }};
+                                                                textConfirmation=@js(__('divisions.modals.delete.confirmation_text'));
+                                                                actionType='delete';
+                                                                actionTitle=@js(__('divisions.modals.delete.title'));
+                                                                actionButtonText=@js(__('forms.delete'));
+                                                                open = !open;
+                                                            "
+                                                            href="#"
+                                                            class="flex items-center gap-2 w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:text-gray-500"
+                                                        >
+                                                            {{ __('forms.delete') }}
                                                         </a>
                                                     @endcan
                                                 </div>
@@ -183,4 +226,7 @@
             </div>
         </div>
     </div>
+
+    @include('livewire.division.modal.confirmation-modal')
+
 </div>

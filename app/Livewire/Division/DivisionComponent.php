@@ -4,13 +4,21 @@ declare(strict_types=1);
 
 namespace App\Livewire\Division;
 
+
+use Arr;
+use App\Enums\Status;
 use Livewire\Component;
 use App\Traits\FormTrait;
 use App\Livewire\Division\Forms\DivisionForm;
+use App\Models\Division;
+use App\Repositories\Repository;
+use App\Traits\WorkTimeUtilities;
+use App\Classes\eHealth\Api\Division as DivisionApi;
 
 class DivisionComponent extends Component
 {
-    use FormTrait;
+    use FormTrait,
+        WorkTimeUtilities;
 
     /**
      * The form model instance for handling division data.
@@ -18,21 +26,6 @@ class DivisionComponent extends Component
      * @var DivisionForm
      */
     public DivisionForm $divisionForm;
-
-    /**
-     * An array containing working hours configuration.
-     *
-     * @var array|null
-     */
-    public ?array $working_hours = [
-        'mon' => 'Понеділок',
-        'tue' => 'Вівторок',
-        'wed' => 'Середа',
-        'thu' => 'Четвер',
-        'fri' => 'П’ятниця',
-        'sat' => 'Субота',
-        'sun' => 'Неділя',
-    ];
 
     /**
      * Array containing dictionary names only used within the component.
@@ -45,6 +38,32 @@ class DivisionComponent extends Component
         'PHONE_TYPE',
         'DIVISION_TYPE'
     ];
+
+    /**
+     * Handles data type conversion for location coordinates after component hydration.
+     *
+     * This method is automatically called by Livewire after the component receives data
+     * from the browser but before the data is applied to the component's properties.
+     * It ensures that latitude and longitude values are always stored as float type,
+     * even if they come from the form as strings.
+     *
+     * - If a coordinate value is empty, it's converted to 0
+     * - If a value exists, it's properly cast to float
+     *
+     * @return void
+     */
+    public function hydrate()
+    {
+        $this->divisionForm->division['location']['latitude'] =
+            (float) (empty($this->divisionForm->division['location']['latitude'])
+                ? 0
+                : $this->divisionForm->division['location']['latitude']);
+
+        $this->divisionForm->division['location']['longitude'] =
+            (float) (empty($this->divisionForm->division['location']['longitude'])
+                ? 0
+                : $this->divisionForm->division['location']['longitude']);
+    }
 
     /**
      * Proxy method!
@@ -111,6 +130,66 @@ class DivisionComponent extends Component
         $this->getDictionary();
 
         return $this;
+    }
+
+    /**
+     * Validate the data coming from the form(s)
+     *
+     * @return bool
+     */
+    public function validateDivision(): bool
+    {
+        $error = $this->divisionForm->doValidation();
+
+        if ($error) {
+            session()->flash('error', $error);
+
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * Prepares and normalizes division data for an outgoing API request.
+     *
+     * This method:
+     * - Removes the 'legal_entity_id' key from the division form data (as it is not needed in the request)
+     * - Passes the division data through the schema service for normalization and snake_case conversion
+     * - Removes any empty keys from the resulting array
+     *
+     * @return array The normalized and cleaned division data ready for API request
+     */
+    protected function prepareRequestData(): array
+    {
+        // This key as is don't need here. But schema has the same key means the legalEntity_uuid
+        Arr::forget($this->divisionForm->division, 'legal_entity_id');
+
+        $divisionData = schemaService()
+                    ->setDataSchema($this->divisionForm->division, app(DivisionApi::class))
+                    ->requestSchemaNormalize('schemaRequest')
+                    ->snakeCaseKeys(true)
+                    ->getNormalizedData();
+
+        return removeEmptyKeys($divisionData);
+    }
+
+    /**
+     * Store division data to the database
+     *
+     * @return null|Division
+     */
+    protected function saveToDB(): ?Division
+    {
+        $division = null;
+
+        $this->divisionForm->division['status'] =  empty($this->divisionForm->division['uuid'])
+            ? Status::DRAFT->value
+            : Status::UNSYNCED->value;
+
+        $division = Repository::division()->saveDivisionData($this->divisionForm->division, legalEntity());
+
+        return $division;
     }
 
     /**

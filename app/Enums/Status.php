@@ -14,6 +14,7 @@ enum Status: string
     case ACTIVE = 'ACTIVE';
     case INACTIVE = 'INACTIVE';
     case DRAFT = 'DRAFT';
+    case UNSYNCED = 'UNSYNCED';
 
     public static function values(): array
     {
@@ -31,6 +32,7 @@ enum Status: string
             self::ACTIVE => __('forms.status.active'),
             self::INACTIVE => __('forms.status.non_active'),
             self::DRAFT => __('forms.status.draft'),
+            self::UNSYNCED => __('forms.status.unsynced'),
         };
     }
 
