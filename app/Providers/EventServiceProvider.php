@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Events\EHealthUserLogin;
 use App\Listeners\LogLockout;
+use App\Listeners\OwnerFirstLoginSyncListener;
+use App\Listeners\ProcessEmployeeRequestsOnLogin;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -16,6 +19,10 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Lockout::class => [
             LogLockout::class
+        ],
+        EHealthUserLogin::class => [
+            OwnerFirstLoginSyncListener::class,
+            ProcessEmployeeRequestsOnLogin::class
         ],
     ];
 
@@ -32,6 +39,6 @@ class EventServiceProvider extends ServiceProvider
      */
     public function shouldDiscoverEvents(): bool
     {
-        return true;
+        return false;
     }
 }

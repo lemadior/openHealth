@@ -6,6 +6,7 @@ use Exception;
 use App\Models\Division;
 use App\Models\HealthcareService;
 use Illuminate\Support\Facades\DB;
+use App\Classes\eHealth\Api\HealthcareService as HealthcareServiceApi;
 
 class HealthcareServiceRepository
 {
@@ -45,6 +46,26 @@ class HealthcareServiceRepository
             }
         });
     }
+
+    /**
+     * Saves all healthcare services from API response using batch upsert operation.
+     *
+     * @param array $healthcareServicesList Raw healthcare services data from eHealth API
+     *
+     * @return void
+     *
+     * @throws Exception If database transaction fails
+     */
+    public function saveHealthcareServiceAll(array $healthcareServicesList): void
+    {
+        DB::transaction(function() use($healthcareServicesList) {
+            $uspertData = HealthcareServiceApi::normalizeResponseDataForUpsert($healthcareServicesList);
+
+            // At first save all the Divisions to teh DB
+            HealthcareService::upsert($uspertData, uniqueBy: ['uuid'], update: new HealthcareService()->getFillable());
+        });
+    }
+
 
     /**
      * TODO: maybe need to put it into validation (need testing)

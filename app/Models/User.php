@@ -115,6 +115,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Employee::class);
     }
 
+    public function syncJobs(): HasMany
+    {
+        return $this->hasMany(SyncJob::class);
+    }
+
     /**
      * This need to override because trait HasProfilePhoto was disabled to remove 'name' attribute calling.
      *

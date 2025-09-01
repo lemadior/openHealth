@@ -25,7 +25,15 @@ class EHealthUserLogin
     public function __construct(
         public User $user,
         public LegalEntity $legalEntity,
-        public string $authUserUUID
+        public string $authUserUUID,
+        public bool $isFirstLogin,
+        public bool $isOwner = false,
+        public string $token =''
     ) {
+        $this->token = session()->get(
+            config('ehealth.api.oauth.bearer_token')
+        ) ?? '';
+
+        $this->isOwner = $user->hasRole('OWNER');
     }
 }

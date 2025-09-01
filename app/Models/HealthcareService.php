@@ -42,6 +42,7 @@ class HealthcareService extends Model
         'coverage_area' => 'json',
         'available_time' => 'json',
         'not_available' => NotAvailableTimeCast::class,
+        'licensed_healthcare_service' => 'json',
         'status' => Status::class
     ];
 

@@ -108,7 +108,8 @@ class EHealthLoginController extends Controller
             return $this->breakAuth('auth.login.error.test_user_email');
         }
 
-        EHealthUserLogin::dispatch($user, $legalEntity, $authUserUUID);
+        // EHealthUserLogin::dispatch($user, $legalEntity, $authUserUUID, $isFirstLogin);
+        EHealthUserLogin::dispatch($user, $legalEntity, $authUserUUID, true); // TODO: remove this after testing and restore line below
 
         auth('ehealth')->login($user);
 
@@ -164,6 +165,10 @@ class EHealthLoginController extends Controller
             Log::error(__('auth.login.error.user_not_found_by_email', [], 'en') . ": {$userData['email']}");
             return null;
         }
+
+        $user->uuid = $authUserUUID;
+        $user->update();
+        $user->refresh();
 
         setPermissionsTeamId($legalEntity->id);
         $user->unsetRelation('roles')->unsetRelation('permissions');

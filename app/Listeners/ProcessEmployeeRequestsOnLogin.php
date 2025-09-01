@@ -32,6 +32,8 @@ readonly class ProcessEmployeeRequestsOnLogin
      */
     public function handle(EHealthUserLogin $event): void
     {
+        \Log::debug("IN LISTENER ProcessEmployeeRequestsOnLogin");
+
         try {
             $pendingRequests = $this->employeeRepository->findPendingRequestsForUser($event->user, $event->legalEntity);
             if ($pendingRequests->isEmpty()) {

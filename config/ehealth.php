@@ -60,7 +60,8 @@ return [
         ],
     ],
     'rate_limit' => [
-        'employee_request' => 20
+        'employee_request' => 20,
+        'division_request' => 50
     ],
     'employee_type' => [
         'OWNER' => [
@@ -952,5 +953,11 @@ return [
     'emailers' => [
         'credentialsQueueTimeout' => 60,
         'failCredentialsTries' => 3
+    ],
+
+    'ui' => [
+        'notifications' => [
+            'refresh_interval' => env('NOTIFICATIONS_REFRESH_INTERVAL', 60000), // Auto-refresh interval in milliseconds (default: 60 seconds)
+        ]
     ]
 ];

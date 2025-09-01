@@ -48,6 +48,11 @@ abstract class EHealthRequest extends PendingRequest
         );
     }
 
+    public function setToken(string $token): static
+    {
+        return $this->withToken($token);
+    }
+
     /**
      * Sends an HTTP request to the eHealth API and handles the response.
      *
@@ -68,6 +73,10 @@ abstract class EHealthRequest extends PendingRequest
     public function send(string $method, string $url, array $options = []): EHealthResponse|Response
     {
         $response = parent::send($method, $url, $options);
+
+        // \Log::info('EHealthRequest:send', ['method' => $method, 'url' => $url, 'options' => $options]);
+        // \Log::info('EHealthRequest:send response', ['response' => $response->json()]);
+        // echo 'EHealthRequest:send response: ' . json_encode($response->json()) . PHP_EOL;
 
         if (!is_a($response, EHealthResponse::class)) {
             return $response;
