@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('status', JobStatus::values())->default(JobStatus::PENDING->value);
             $table->string('entity_type')->nullable();
             $table->integer('page')->nullable();
+            $table->timestamp('finished_at')->nullable()->after('updated_at');
             $table->timestamps();
         });
     }

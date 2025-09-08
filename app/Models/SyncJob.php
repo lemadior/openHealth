@@ -15,11 +15,13 @@ class SyncJob extends Model
         'legal_entity_id',
         'entity_type',
         'status',
-        'page'
+        'page',
+        'finished_at'
     ];
 
     protected $casts = [
-        'status' => JobStatus::class
+        'status' => JobStatus::class,
+        'finished_at' => 'datetime'
     ];
 
     public function legalEntity(): BelongsTo
@@ -62,5 +64,10 @@ class SyncJob extends Model
     public function markAsCompleted(): void
     {
         $this->update(['status' => JobStatus::COMPLETED]);
+    }
+
+    public function markAsFinished(): void
+    {
+        $this->update(['finished_at' => now()]);
     }
 }

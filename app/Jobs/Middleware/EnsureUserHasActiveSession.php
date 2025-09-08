@@ -3,11 +3,13 @@
 namespace App\Jobs\Middleware;
 
 use App\Notifications\SyncNotification;
+use App\Traits\ManagesSyncLock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class EnsureUserHasActiveSession
 {
+    use ManagesSyncLock;
     /**
      * Process the queued job.
      *
@@ -37,8 +39,13 @@ class EnsureUserHasActiveSession
             $job->syncJob->markAsPaused();
             $user->notify(new SyncNotification($this->getEntityTypeFromJob($job), 'paused'));
 
+            // Release sync lock when session is lost
+            if (property_exists($job, 'legalEntity') && $job->legalEntity) {
+                $this->releaseSyncLock($user, $job->legalEntity, 'session lost');
+            }
+
             // Cancel batch
-            $job->batch()->cancel();
+            $job->batch()?->cancel();
 
             // Delete job to prevent retries
             $job->delete();

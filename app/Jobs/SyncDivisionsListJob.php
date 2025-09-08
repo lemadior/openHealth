@@ -2,37 +2,39 @@
 
 namespace App\Jobs;
 
-use App\Jobs\Middleware\EnsureUserHasActiveSession;
-use App\Notifications\SyncNotification;
-use Throwable;
 use Exception;
+use Throwable;
 use App\Models\User;
 use App\Models\SyncJob;
 use App\Enums\JobStatus;
 use App\Models\Division;
 use App\Models\LegalEntity;
 use Illuminate\Bus\Batchable;
+use App\Traits\ManagesSyncLock;
 use App\Classes\eHealth\EHealth;
 use App\Repositories\Repository;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use App\Notifications\DivisionUpdated;
+use App\Notifications\SyncNotification;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\Notification;
+use App\Jobs\Middleware\PreventDuplicateJobs;
+use App\Jobs\Middleware\EnsureUserHasActiveSession;
 use App\Exceptions\EHealth\EHealthResponseException;
-use App\Exceptions\EHealth\EHealthValidationException;
 
 class SyncDivisionsListJob implements ShouldQueue
 {
     use Queueable,
-        Batchable;
+        Batchable,
+        ManagesSyncLock;
 
     /** @var int Rate limit delay in seconds (50 requests per minute = 1 request every 1.2s, using 2s for safety) */
     private const int RATE_LIMIT_DELAY = 3;
 
     public int $tries = 3;
     public int $timeout = 60;
+
+    /** @var string Entity type for duplicate job prevention */
+    public string $entityType = Division::class;
 
     /**
      * Get the middleware the job should pass through.
@@ -41,7 +43,10 @@ class SyncDivisionsListJob implements ShouldQueue
      */
     public function middleware(): array
     {
-        return [new EnsureUserHasActiveSession];
+        return [
+            new EnsureUserHasActiveSession,
+            new PreventDuplicateJobs
+        ];
     }
 
     /**
@@ -50,7 +55,7 @@ class SyncDivisionsListJob implements ShouldQueue
     public function __construct(
         protected string $token,
         public User $user,
-        protected LegalEntity $legalEntity,
+        public LegalEntity $legalEntity,
         public ?SyncJob $syncJob = null
     ) {
     }
@@ -65,31 +70,11 @@ class SyncDivisionsListJob implements ShouldQueue
 
         \Log::debug('DIVISIONs LIST JOB:', ['id' => $this, 'user_id' => $this->user->id, 'legal_entity_id' => $this->legalEntity->id, 'page' => $page]);
         $response = null;
-        $query = '';
-
-        // TODO: check if all of this JOB works are COMPLETED
-
-        $isAnotherJobShouldStart = SyncJob::where('legal_entity_id', $this->legalEntity->id)
-            ->where('entity_type', Division::class)
-            ->where('id', '!=', $this->syncJob?->id ?? 0)
-            ->where(function ($query) {
-                $query->where('status', JobStatus::PROCESSING)
-                      ->orWhere('status', JobStatus::PAUSED);
-            })
-            ->exists();
-
-        if ($isAnotherJobShouldStart) {
-            Log::info('SyncDivisionsListJob: Skipping already processed divisions for page ' . $page);
-            echo 'SyncDivisionsListJob: Postponed for page ' . $page . PHP_EOL;
-            $this->release(10);
-
-            return;
-        }
 
         Log::info('SyncDivisionsListJob: Processing page ' . $page);
 
         $this->syncJob->markAsProcessing();
-            echo "PAGE: ". $page . PHP_EOL;
+        echo "PAGE: ". $page . PHP_EOL;
 
         try {
             // TESTING for different error types
@@ -129,11 +114,11 @@ class SyncDivisionsListJob implements ShouldQueue
                 $retryAfter = match($err->getCode()) {
                     401 => 10,  // Unauthorized - maybe token refresh needed
                     429 => 60,  // Rate limit
-                        503 => 120, // Service unavailable
-                        502, 504 => 30, // Gateway errors
-                        500 => 90,  // Internal server error
-                        408 => 45,  // Timeout
-                        default => 60
+                    503 => 120, // Service unavailable
+                    502, 504 => 30, // Gateway errors
+                    500 => 90,  // Internal server error
+                    408 => 45,  // Timeout
+                    default => 60
                 };
 
                 if ($this->attempts() < $this->tries) {
@@ -143,6 +128,9 @@ class SyncDivisionsListJob implements ShouldQueue
                     echo "Max attempts reached. Not retrying." . PHP_EOL;
                     $this->syncJob->markAsPaused();
                     $this->user->notify(new SyncNotification('legal_entity', 'paused'));
+
+                    $this->releaseSyncLock($this->user, $this->legalEntity, 'job pause');
+
                     $this->batch()?->cancel();
                     throw new Exception('Batch cancelled!');
                 }
@@ -162,12 +150,10 @@ class SyncDivisionsListJob implements ShouldQueue
         }
 
         echo 'SyncDivisionsListJob: Divisions fetched: ' . count($divisionsList) . ' (should run BEFORE SyncOwnerDetailsJob)' . PHP_EOL;
-
         $this->syncJob->markAsCompleted();
-        echo 'SyncDivisionsListJob COMPLETED' . PHP_EOL;
 
         if ($response?->isNotLast()) {
-            echo '📄 Multi-paging detected, adding next page to batch' . PHP_EOL;
+            echo 'Multi-paging detected, adding next page to batch' . PHP_EOL;
 
             $newSyncJob = $this->legalEntity->syncJobs()->create([
                 'status' => JobStatus::PENDING,
@@ -192,6 +178,9 @@ class SyncDivisionsListJob implements ShouldQueue
                 echo "Batch not available, dispatched as separate job with " . self::RATE_LIMIT_DELAY . "s delay" . PHP_EOL;
             }
         } else {
+            // This is the last page
+            echo 'SyncDivisionsListJob COMPLETED' . PHP_EOL;
+
             // Notification::send($this->user, new DivisionUpdated());
             $this->user->notify(new SyncNotification('division', 'completed'));
         }
@@ -214,5 +203,8 @@ class SyncDivisionsListJob implements ShouldQueue
 
             $this->user->notify(new SyncNotification('division', 'failed'));
         }
+
+        // Ensure the sync lock is released on failure as well
+        $this->releaseSyncLock($this->user, $this->legalEntity, 'division sync failure');
     }
 }

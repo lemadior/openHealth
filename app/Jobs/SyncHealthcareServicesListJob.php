@@ -3,7 +3,9 @@
 namespace App\Jobs;
 
 use App\Jobs\Middleware\EnsureUserHasActiveSession;
+use App\Jobs\Middleware\PreventDuplicateJobs;
 use App\Notifications\SyncNotification;
+use App\Traits\ManagesSyncLock;
 use Throwable;
 use App\Models\User;
 use App\Models\SyncJob;
@@ -23,10 +25,14 @@ use Illuminate\Bus\Batchable;
 class SyncHealthcareServicesListJob implements ShouldQueue
 {
     use Queueable,
-        Batchable;
+        Batchable,
+        ManagesSyncLock;
 
     public int $tries = 3;
     public int $timeout = 60;
+
+    /** @var string Entity type for duplicate job prevention */
+    public string $entityType = \App\Models\HealthcareService::class;
 
     /** @var int Rate limit delay in seconds (50 requests per minute = 1 request every 1.2s, using 2s for safety) */
     private const int RATE_LIMIT_DELAY = 3;
@@ -38,7 +44,10 @@ class SyncHealthcareServicesListJob implements ShouldQueue
      */
     public function middleware(): array
     {
-        return [new EnsureUserHasActiveSession];
+        return [
+            new EnsureUserHasActiveSession,
+            new PreventDuplicateJobs
+        ];
     }
 
     /**
@@ -47,7 +56,7 @@ class SyncHealthcareServicesListJob implements ShouldQueue
     public function __construct(
         protected string $token,
         public User $user,
-        protected LegalEntity $legalEntity,
+        public LegalEntity $legalEntity,
         public ?SyncJob $syncJob = null
     ) {
     }
@@ -59,30 +68,8 @@ class SyncHealthcareServicesListJob implements ShouldQueue
     {
         $page = $this->syncJob?->page ?? 1;
         echo "Queue #" . $page . PHP_EOL;
-        $query = '';
 
-        \Log::debug('DIVISIONs LIST JOB:', ['id' => $this, 'user_id' => $this->user->id, 'legal_entity_id' => $this->legalEntity->id, 'page' => $page]);
         $response = null;
-        $query = '';
-
-        // TODO: check if all of this JOB works are COMPLETED
-
-        $isAnotherJobShouldStart = SyncJob::where('legal_entity_id', $this->legalEntity->id)
-            ->where('entity_type', HealthcareService::class)
-            ->where('id', '!=', $this->syncJob?->id ?? 0)
-            ->where(function ($query) {
-                $query->where('status', JobStatus::PROCESSING)
-                      ->orWhere('status', JobStatus::PAUSED);
-            })
-            ->exists();
-
-        if ($isAnotherJobShouldStart) {
-            Log::info('SyncHealthcareServicesListJob: Skipping already processed healthcare services for page ' . $page);
-            echo 'SyncHealthcareServicesListJob: Postponed for page ' . $page . PHP_EOL;
-            $this->release(10);
-
-            return;
-        }
 
         Log::info('SyncHealthcareServicesListJob: Processing page ' . $page);
 
@@ -98,7 +85,7 @@ class SyncHealthcareServicesListJob implements ShouldQueue
 
             $healthcareServicesList = $response->validate();
 
-            Repository::healthcareService()->saveHealthcareServiceAll($healthcareServicesList, $this->legalEntity);
+            Repository::healthcareService()->saveHealthcareServiceAll($healthcareServicesList);
 
         } catch (EHealthResponseException $err) {
             echo 'EHealth Response Error: ' . $err->getCode() . ' - ' . $err->getMessage() . PHP_EOL;
@@ -121,6 +108,9 @@ class SyncHealthcareServicesListJob implements ShouldQueue
                     echo "Max attempts reached. Not retrying." . PHP_EOL;
                     $this->syncJob->markAsPaused();
                     $this->user->notify(new SyncNotification('legal_entity', 'paused'));
+
+                    $this->releaseSyncLock($this->user, $this->legalEntity, 'job pause');
+
                     $this->batch()?->cancel();
                     throw new Exception('Batch cancelled!');
                 }
@@ -142,6 +132,7 @@ class SyncHealthcareServicesListJob implements ShouldQueue
         }
 
         echo 'Healthcare Services fetched: ' . count($healthcareServicesList) . PHP_EOL;
+        $this->syncJob->markAsCompleted();
 
         if ($response?->isNotLast()) {
             $newSyncJob = $this->legalEntity->syncJobs()->create([
@@ -165,10 +156,11 @@ class SyncHealthcareServicesListJob implements ShouldQueue
                 echo "Batch not available, dispatched as separate job with " . self::RATE_LIMIT_DELAY . "s delay" . PHP_EOL;
             }
         } else {
+            // This is the last page
+            echo 'Healthcare Services SYNC COMPLETED' . PHP_EOL;
+
             $this->user->notify(new SyncNotification('healthcare_service', 'completed'));
         }
-
-        $this->syncJob->markAsCompleted();
     }
 
     public function failed(Exception $exception)
@@ -187,5 +179,8 @@ class SyncHealthcareServicesListJob implements ShouldQueue
 
             $this->user->notify(new SyncNotification('healthcare_service', 'failed'));
         }
+
+        // Ensure the sync lock is released on failure
+        $this->releaseSyncLock($this->user, $this->legalEntity, 'healthcare service sync failure');
     }
 }
