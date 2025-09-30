@@ -110,8 +110,6 @@ abstract class EHealthJob implements ShouldQueue
 
     public function handle(): void
     {
-        sleep(5);
-
         echo "Processing Job: " . static::BATCH_NAME . " Page: " . $this->page . ' is First Login: ' . ($this->isFirstLogin ? 'Yes' : 'No') . PHP_EOL;
         echo "Start from user: " . ($this->user ? $this->user->id : 'No user found') . PHP_EOL;
         echo "Legal Entity ID: " . ($this->legalEntity ? $this->legalEntity->id : 'No legal entity found') . PHP_EOL;

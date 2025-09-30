@@ -82,6 +82,8 @@ class DivisionIndex extends DivisionComponent
         $response = null;
 
         try {
+            session()->flash('success', __('Синхронізація запущена. Будь ласка, зачекайте...'));
+
             $response = EHealth::division()->getMany();
 
             $divisions = $response->validate();
