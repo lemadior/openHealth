@@ -23,6 +23,8 @@ use Throwable;
 use GuzzleHttp\Promise\PromiseInterface;
 use App\Classes\eHealth\EHealthResponse;
 use App\Models\LegalEntity;
+use Illuminate\Queue\MaxAttemptsExceededException;
+use Illuminate\Support\Facades\Crypt;
 
 class EmployeeDetailsUpsert extends EHealthJob
 {
@@ -30,11 +32,19 @@ class EmployeeDetailsUpsert extends EHealthJob
 
     use SerializesModels;
 
+    public const int RATE_LIMIT_DELAY = 1; // seconds
+
     public const string BATCH_NAME = 'EmployeeDetailsSync';
 
     public const string SCOPE_REQUIRED = 'employee:details';
 
     public const string ENTITY = LegalEntity::ENTITY_EMPLOYEE;
+
+    public function backoff(): array
+    {
+        return [3, 5, 10, 30];
+    }
+
 
     public function __construct(
         public Employee $employee,
@@ -48,6 +58,8 @@ class EmployeeDetailsUpsert extends EHealthJob
     // Get data from EHealth API
     protected function sendRequest(string $token): PromiseInterface|EHealthResponse|null
     {
+        echo 'Processing EmployeeDetailsUpsert for employee:' . $this->employee->id . ', LE:' . ($this->legalEntity ? $this->legalEntity->id : 'N/A') . PHP_EOL;
+
         return EHealth::employee()->withToken($this->token)->getDetails($this->employee->uuid, groupByEntities: true);
     }
 
@@ -55,8 +67,6 @@ class EmployeeDetailsUpsert extends EHealthJob
     protected function processResponse(?EHealthResponse $response): void
     {
         $validatedData = $response->validate();
-
-        echo 'Processing EmployeeDetailsUpsert for employee:' . $this->employee->id . ', LE:' . ($this->legalEntity ? $this->legalEntity->id : 'N/A') . PHP_EOL;
 
         $this->employee->save();
 
@@ -95,6 +105,37 @@ class EmployeeDetailsUpsert extends EHealthJob
         if (!$user->hasRole($roleName)) {
             $user->assignRole($roleName);
         }
+    }
+
+      // Handle job failure
+    public function failed(?Throwable $exception): void
+    {
+        // It is need beacuse if job is failed the middleware doesn't called
+        $olduser = $this->user ?? ($this->batch()->options['user'] ?? null);
+        $token = Crypt::decryptString($this->batch()->options['token'] ?? '');
+
+        // If an error is not raised by the API (code 0), skip the job
+        if ($exception->getCode() === 0 && !$exception instanceof MaxAttemptsExceededException && !$exception instanceof ConnectionException) {
+            // Log::channel('e_health_errors')->error('Sync job failed: ', [
+            //     'EXCEPTION' => $exception::class,
+            //     'message' => $exception->getMessage(),
+            //     'attempts' => $this->attempts(),
+            //     'batch_id' => $this->batch()?->id,
+            //     'batch_name' => static::BATCH_NAME,
+            //     'user_id' => $olduser?->id,
+            // ]);
+
+            $this->logAnError($exception, $olduser?->id ?? null);
+
+            echo "Job FAILED: " . static::BATCH_NAME . " Exception type: " . $exception::class . " Code: " . $exception->getCode() . " Error: " . $exception->getMessage() . PHP_EOL;
+            echo "Job has been skipped because of undefined problem. with token: " . $token . PHP_EOL;
+
+            $this->proceedNextJob($olduser, $token);
+
+            return;
+        }
+
+        parent::failed($exception);
     }
 
     /**

@@ -131,7 +131,7 @@ abstract class EHealthJob implements ShouldQueue
             echo "Scheduling next page job: " . static::BATCH_NAME . " Page: " . $this->page . " Next Page: " . ($this->page + 1) . PHP_EOL;
             $this->batch()
                 ?->add(new static(legalEntity: $this->legalEntity, page: $this->page + 1, isFirstLogin: $this->isFirstLogin, nextEntity: $this->nextEntity, standalone: $this->standalone)
-                ->delay(now()->addSeconds(self::RATE_LIMIT_DELAY)));
+                ->delay(now()->addSeconds(value: static::RATE_LIMIT_DELAY)));
 
             return;
         }
@@ -140,19 +140,21 @@ abstract class EHealthJob implements ShouldQueue
 
         $this->setEntityStatus(JobStatus::COMPLETED);
 
-        $nextJob = $this->getNextEntityJob();
+        $this->proceedNextJob($this->user, $this->token);
 
-        if ($nextJob !== null) {
-            echo "Scheduling next job: " . $nextJob::BATCH_NAME . PHP_EOL;
+        // $nextJob = $this->getNextEntityJob();
 
-            Bus::batch([$nextJob])
-                ->name($nextJob::BATCH_NAME)
-                ->withOption('legal_entity_id', $this->legalEntity->id)
-                ->withOption('token', Crypt::encryptString($this->token)) // Passing the same token to the next job
-                ->withOption('user', $this->user) // Passing the same user to the next job
-                ->onQueue('sync')
-                ->dispatch();
-        }
+        // if ($nextJob !== null) {
+        //     echo "Scheduling next job: " . $nextJob::BATCH_NAME . PHP_EOL;
+
+        //     Bus::batch([$nextJob])
+        //         ->name($nextJob::BATCH_NAME)
+        //         ->withOption('legal_entity_id', $this->legalEntity->id)
+        //         ->withOption('token', Crypt::encryptString($this->token)) // Passing the same token to the next job
+        //         ->withOption('user', $this->user) // Passing the same user to the next job
+        //         ->onQueue('sync')
+        //         ->dispatch();
+        // }
     }
 
     // Handle job failure
@@ -161,14 +163,16 @@ abstract class EHealthJob implements ShouldQueue
         // It is need beacuse if job is failed the middleware doesn't called
         $olduser = $this->user ?? ($this->batch()->options['user'] ?? null);
 
-        Log::channel('e_health_errors')->error('Sync job failed: ', [
-            'EXCEPTION' => $exception::class,
-            'message' => $exception->getMessage(),
-            'attempts' => $this->attempts(),
-            'batch_id' => $this->batch()?->id,
-            'batch_name' => static::BATCH_NAME,
-            'user_id' => $olduser?->id,
-        ]);
+        $this->logAnError($exception, $olduser?->id ?? null);
+
+        // Log::channel('e_health_errors')->error('Sync job failed: ', [
+        //     'EXCEPTION' => $exception::class,
+        //     'message' => $exception->getMessage(),
+        //     'attempts' => $this->attempts(),
+        //     'batch_id' => $this->batch()?->id,
+        //     'batch_name' => static::BATCH_NAME,
+        //     'user_id' => $olduser?->id,
+        // ]);
 
         echo "Job FAILED: " . static::BATCH_NAME . " Exception type: " . $exception::class . " Code: " . $exception->getCode() . " Error: " . $exception->getMessage() . PHP_EOL;
 
@@ -226,6 +230,40 @@ abstract class EHealthJob implements ShouldQueue
             // TODO: find out why notification stopped job's working
             $olduser->notify(new SyncNotification('legal_entity', 'paused'));
         }
+    }
+
+    protected function proceedNextJob(User $user, string $token): void
+    {
+        $nextJob = $this->getNextEntityJob()->delay(now()->addSeconds(static::RATE_LIMIT_DELAY));
+
+        if (!$nextJob)
+        {
+            return;
+        }
+
+        // if ($nextJob !== null) {
+            echo "Scheduling next job: " . $nextJob::BATCH_NAME . PHP_EOL;
+            echo "With legal entity ID: " . $this->legalEntity->id . " user ID: " . ($user ? $user->id : 'N/A') . " token: " . $token . PHP_EOL;
+            Bus::batch([$nextJob])
+                ->name($nextJob::BATCH_NAME)
+                ->withOption('legal_entity_id', $this->legalEntity->id)
+                ->withOption('token', Crypt::encryptString($token)) // Passing the same token to the next job
+                ->withOption('user', $user) // Passing the same user to the next job
+                ->onQueue('sync')
+                ->dispatch();
+        // }
+    }
+
+    protected function logAnError(?Throwable $exception, ?int $userId): void
+    {
+        Log::channel('e_health_errors')->error('Sync job failed: ', [
+            'EXCEPTION' => $exception::class,
+            'message' => $exception->getMessage(),
+            'attempts' => $this->attempts(),
+            'batch_id' => $this->batch()?->id,
+            'batch_name' => static::BATCH_NAME,
+            'user_id' => $userId,
+        ]);
     }
 
     /**

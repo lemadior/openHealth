@@ -147,6 +147,10 @@ class Employee extends EHealthRequest
             'party.documents.*.number' => 'required|string',
             'party.documents.*.issued_by' => 'nullable|string',
             'party.documents.*.issued_at' => 'nullable|date_format:Y-m-d',
+
+            // TODO: only for testing jobs
+            // 'party.documents.*.issued_by' => 'sometimes|string',
+            // 'party.documents.*.issued_at' => 'required|date_format:Y-m-d',
         ];
 
         if (!empty($employeeTypeKey)) {

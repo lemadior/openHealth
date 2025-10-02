@@ -17,6 +17,8 @@ class EmployeeSync extends EHealthJob
 {
     use BatchLegalEntityQueries;
 
+    public const int RATE_LIMIT_DELAY = 0; // seconds
+
     public const string BATCH_NAME = 'EmployeeFullSync';
 
     public const string SCOPE_REQUIRED = 'employee:read';
