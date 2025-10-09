@@ -12,12 +12,12 @@ use App\Models\License;
 use Livewire\Component;
 use App\Traits\FormTrait;
 use Illuminate\Support\Str;
-use Livewire\WithFileUploads;
 use App\Traits\AddressSearch;
 use App\Models\Employee\Employee;
 use App\Events\LegalEntityCreate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\Employee\RequestStatus;
 use App\Classes\Cipher\Traits\Cipher;
 use Illuminate\Support\Facades\Cache;
 use App\Repositories\PhoneRepository;
@@ -27,6 +27,7 @@ use App\Models\Employee\EmployeeRequest;
 use App\Repositories\EmployeeRepository;
 use Illuminate\Validation\ValidationException;
 use App\Models\LegalEntity as LegalEntityModel;
+use App\Livewire\Employee\Traits\ManagesEmployeeForm;
 use App\Livewire\LegalEntity\Forms\LegalEntitiesForms;
 use App\Livewire\LegalEntity\Forms\LegalEntitiesRequestApi;
 
@@ -34,7 +35,7 @@ abstract class LegalEntity extends Component
 {
     use FormTrait,
         Cipher,
-        WithFileUploads,
+        ManagesEmployeeForm,
         AddressSearch;
 
     protected const STEP_PATH='views/livewire/legal-entity/step';
@@ -58,6 +59,8 @@ abstract class LegalEntity extends Component
      * @var string The Cache ID to store Owner being filled by the current user
      */
     protected string $stepCacheKey;
+
+    protected ?int $employeeRequestId = null;
 
     /**
      * @var LegalEntitiesForms The Form
@@ -483,37 +486,40 @@ abstract class LegalEntity extends Component
     }
 
     /**
-     * Prepare all data needs for creating EmployeeRequest throught LEgalEntity creation
+     * Prepare all data needs for creating EmployeeRequest throught LegalEntity creation
      *
      * @param string $legalEntityId
      * @param array $requestData
      *
      * @return array
      */
-    private function prepareEmployeeData(string $legalEntityId, array $requestData): array
+    private function mapEmployeRequestData(array $requestData): array
     {
-        $arr = [
-            'legal_entity_id' => $legalEntityId,
-            'position' => $requestData['owner']['position'],
-            'start_date' => Carbon::now()->format('Y-m-d'),
-            'status' => 'SIGNED',
-            'employee_type' => "OWNER",
+        return [
+            "position" => $requestData['owner']['position'],
+            "employee_type" => "OWNER",
+            "start_date" => Carbon::now()->format('Y-m-d'),
+            "end_date" => null,
+            "division_id" => null,
+            "documents" => $requestData['owner']['documents'],
+            "first_name" => $requestData['owner']['first_name'],
+            "last_name" => $requestData['owner']['last_name'],
+            "second_name" => $requestData['owner']['second_name'] ?? '',
+            "gender" => $requestData['owner']['gender'],
+            "birth_date" => $requestData['owner']['birth_date'],
+            "phones" => $requestData['owner']['phones'],
+            "tax_id" => $requestData['owner']['tax_id'],
+            "no_tax_id" => $requestData['owner']['no_tax_id'],
             'email' => $requestData['owner']['email'],
-            'party' => [
-                'first_name' => $requestData['owner']['first_name'],
-                'last_name' => $requestData['owner']['last_name'],
-                'second_name' => $requestData['owner']['second_name'] ?? '',
-                'birth_date' => $requestData['owner']['birth_date'],
-                'gender' => $requestData['owner']['gender'],
-                'tax_id' => $requestData['owner']['tax_id'],
-                'no_tax_id' => $requestData['owner']['no_tax_id'],
-                'email' => $requestData['owner']['email'],
-                'documents' => $requestData['owner']['documents'],
-                'phones' => $requestData['owner']['phones']
-            ]
+            "doctor" => [
+                "specialities" => [],
+                "science_degree" => [],
+                "qualifications" => [],
+                "educations" => []
+            ],
+            "working_experience" => null,
+            "about_myself" => null
         ];
-
-        return $arr;
     }
 
     /**
@@ -573,21 +579,25 @@ abstract class LegalEntity extends Component
     protected function createEmployeeRequest(LegalEntityModel $legalEntity, array $requestData, string $employeeRequestId, ?string $userId): void
     {
         try {
-            $employeeData = $this->prepareEmployeeData($legalEntity->uuid, $requestData);
+            $employeeDataForDb = $this->mapEmployeRequestData($requestData);
         } catch (Exception $err) {
-            throw new Exception('Error: prepareEmployeeData: ' . $err->getMessage(), 3);
+            throw new Exception('Error: mapEmployeRequestData: ' . $err->getMessage(), 3);
         }
 
         try {
-            $employeeResponse = $this->getEmployeeResponse(['employee_request' => $employeeData], $legalEntity->uuid, $employeeRequestId);
+            // This method just create a draft record in the local DB and set the $this->employeeRequestId property)
+            $this->createNewDraft($employeeDataForDb, $legalEntity);
         } catch (Exception $err) {
-            throw new Exception('Error: getEmployeeResponse:  ' . $err->getMessage(), 4);
+            throw new Exception('Error: createNewDraft: ' . $err->getMessage(), 4);
         }
 
+        $employeeRequest = $this->getEmployeeRequestForSave();
+        $employeeRequestResponseData = $this->mapEmployeeRequestResponse($employeeDataForDb, $legalEntity->uuid, $employeeRequestId);
+
         try {
-            $this->saveEmployeeResponse($employeeResponse, $legalEntity, $userId);
+            $this->updateLocalRecords($employeeRequest, $employeeRequestResponseData, $legalEntity);
         } catch (Exception $err) {
-            throw new Exception('Error: saveEmployeeResponse: ' . $err->getMessage(), 5);
+            throw new Exception('Error: updateLocalRecords: ' . $err->getMessage(), 5);
         }
     }
 
@@ -600,37 +610,37 @@ abstract class LegalEntity extends Component
      *
      * @return array
      */
-    protected function getEmployeeResponse(array $employeeData, string $legalEntityUUID, string $employeeRequestId): array
+    protected function mapEmployeeRequestResponse(array $employeeData, string $legalEntityUUID, string $employeeRequestId): array
     {
-        $employeeData = $employeeData['employee_request'];
-
-        $party = $employeeData['party'];
-
-        $arr = [
-              "legal_entity_id" => $legalEntityUUID,
-              "position" => $employeeData['position'],
-              "start_date" => $employeeData['start_date'],
-              "status" => $employeeData['status'],
-              "employee_type" => $employeeData['employee_type'],
-              'email' => $employeeData['email'],
-              "party" => [
-                "first_name" => $party['first_name'],
-                "last_name" => $party['last_name'],
-                "second_name" => $party['second_name'],
-                "birth_date" => $party['birth_date'],
-                "gender" => $party['gender'],
-                "no_tax_id" => $party['no_tax_id'],
-                "tax_id" => $party['tax_id'] ?? null,
-                "email" => $party['email'],
-                "documents" => $party['documents'],
-                "phones" => $party['phones']
-              ],
-              "id" => $employeeRequestId,
-              "inserted_at" => Carbon::now()->format('Y-m-d'),
-              "updated_at" => Carbon::now()->format('Y-m-d')
+        return [
+            'id' => $legalEntityUUID,
+            "ehealth_response" => [
+                "data" => [
+                    "employee_type" => $employeeData['employee_type'],
+                    "id" => $employeeRequestId,
+                    "inserted_at" => Carbon::now()->format('Y-m-d'),
+                    "legal_entity_id" => $legalEntityUUID,
+                    "party" => [
+                        "about_myself" => $employeeData['about_myself'],
+                        "birth_date" => $employeeData['birth_date'],
+                        "documents" => $employeeData['documents'],
+                        "email" => $employeeData['email'],
+                        "first_name" => $employeeData['first_name'],
+                        "gender" => $employeeData['gender'],
+                        "last_name" => $employeeData['last_name'],
+                        "no_tax_id" => $employeeData['no_tax_id'],
+                        "phones" => $employeeData['phones'],
+                        "second_name" => $employeeData['second_name'],
+                        "tax_id" => $employeeData['tax_id'],
+                        "working_experience" => $employeeData['working_experience'],
+                    ],
+                    "position" => $employeeData['position'],
+                    "start_date" => $employeeData['start_date'],
+                    "status" => RequestStatus::SIGNED->value,
+                    "updated_at" => Carbon::now()->format('Y-m-d')
+                ]
+            ]
         ];
-
-        return $arr;
     }
 
     /**
@@ -780,5 +790,19 @@ abstract class LegalEntity extends Component
         event(new LegalEntityCreate($authenticatedUser, $owner, $password));
 
         return $owner;
+    }
+
+    /**
+     * Retrieves the EmployeeRequest instance to be used for saving, or null if not available.
+     *
+     * @return EmployeeRequest|null
+     */
+    protected function getEmployeeRequestForSave(): EmployeeRequest|null
+    {
+        if (!empty($this->employeeRequestId)) {
+            return EmployeeRequest::find($this->employeeRequestId);
+        }
+
+        return null;
     }
 }

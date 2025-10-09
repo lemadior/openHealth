@@ -13,6 +13,7 @@ use App\Exceptions\EHealth\EHealthValidationException;
 use App\Models\Division;
 use App\Models\Employee\BaseEmployee;
 use App\Models\Employee\EmployeeRequest;
+use App\Models\LegalEntity;
 use App\Models\Relations\Party;
 use App\Models\Revision;
 use App\Repositories\Repository;
@@ -231,8 +232,10 @@ trait ManagesEmployeeForm
     /**
      * Creates a new draft request.
      */
-    protected function createNewDraft(array $preparedDataForDb): void
+    protected function createNewDraft(array $preparedDataForDb, ?LegalEntity $legalEntity = null): void
     {
+        $legalEntity ??= legalEntity();
+
         $partyData = $this->extractPartyData($preparedDataForDb);
 
         $employeeRequestData = Arr::only($preparedDataForDb, [
@@ -242,7 +245,7 @@ trait ManagesEmployeeForm
 
         $newRequest = Repository::employee()->createEmployeeRequestDraft(
             $employeeRequestData,
-            legalEntity()
+            $legalEntity
         );
 
         $nestedDataForRevision = $this->mapRevisionData($preparedDataForDb);
@@ -560,14 +563,15 @@ trait ManagesEmployeeForm
     /**
      * Updates local records with the response from the eHealth API.
      */
-    private function updateLocalRecords(EmployeeRequest $request, array $eHealthResponse): void
+    private function updateLocalRecords(EmployeeRequest $request, array $eHealthResponse, ?LegalEntity $legalEntity = null): void
     {
+        $legalEntity ??= legalEntity();
         $uuid = $eHealthResponse['id'];
 
         $request->update(
             [
                 'uuid' => $uuid,
-                'legal_entity_uuid' => legalEntity()->uuid,
+                'legal_entity_uuid' => $legalEntity->uuid,
                 'inserted_at' => Carbon::now(),
                 'status' => RequestStatus::SIGNED,
                 'division_id' => $request->division_id,
