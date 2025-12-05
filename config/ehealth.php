@@ -52,12 +52,6 @@ return [
             'confidant_person_relationship:read'
              //'related_legal_entities:read',
        ],
-       'MSP_LIMITED' => [
-            'employee_role:read', 'healthcare_service:read', 'declaration:read', 'declaration_request:read', 'division:details', 'division:read', 'employee:details', 'employee:read',
-            'employee_request:read', 'legal_entity:read', 'otp:read', 'person:read', 'reimbursement_report:read', 'secret:refresh', 'capitation_report:read', 'contract_request:read', 'client:read',
-            'connection:read', 'related_legal_entities:read', 'contract:read', 'medication_request:details', 'medication_dispense:read', 'license:details', 'license:read', 'party_verification:details',
-            'party_verification:write', 'person_verification:details', 'person_verification:write', 'party_verification:read'
-       ],
         'PRIMARY_CARE' => [
             'employee_role:write', 'employee_role:read', 'healthcare_service:write', 'healthcare_service:read', 'declaration:read', 'declaration_request:approve', 'declaration_request:read',
             'declaration_request:reject', 'declaration_request:sign', 'declaration_request:write', 'division:activate', 'division:deactivate', 'division:details', 'division:read', 'division:write',
