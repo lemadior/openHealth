@@ -887,6 +887,9 @@ abstract class LegalEntity extends Component
      */
     protected function saveLicense(array $data): void
     {
+        $data['ehealth_inserted_at'] = convertToYmd($data['ehealth_inserted_at']);
+        $data['ehealth_updated_at'] = convertToYmd($data['ehealth_updated_at']);
+
         $license = License::firstOrNew(['uuid' => $data['uuid']]);
         $license->fill($data);
         $license->is_primary = true;
